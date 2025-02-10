@@ -17,7 +17,7 @@ defmodule CoinTalkWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import CoinTalkWeb.Gettext
+  use Gettext, backend: CoinTalk.Gettext
 
   @doc """
   Renders a modal.

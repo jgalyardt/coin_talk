@@ -22,6 +22,9 @@ config :coin_talk, CoinTalkWeb.Endpoint,
   pubsub_server: CoinTalk.PubSub,
   live_view: [signing_salt: "7YHp2+XW"]
 
+config :coin_talk, CoinTalk.ApiClient,
+  api_key: System.get_env("GEMINI_API_KEY") || raise("GEMINI_API_KEY is missing!")
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

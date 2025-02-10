@@ -20,5 +20,5 @@ defmodule CoinTalkWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :coin_talk
+  use Gettext.Backend, otp_app: :coin_talk
 end

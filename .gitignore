@@ -35,3 +35,5 @@ coin_talk-*.tar
 npm-debug.log
 /assets/node_modules/
 
+config/.env
+ai/generated_prompt.txt
