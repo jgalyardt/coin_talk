@@ -45,8 +45,8 @@ defmodule CoinTalk.BotResponder do
     # Get the market data context summary.
     market_context = CoinTalk.MarketData.get_context()
 
-    # Get chat history for the past 10 minutes.
-    chat_history = CoinTalk.Chat.list_recent_chats(10)
+    # Get chat history for the past 2 minutes.
+    chat_history = CoinTalk.Chat.list_recent_chats(2)
     chat_history_str = format_chat_history(chat_history)
 
     # Extract the most recent message to serve as the conversational anchor.
@@ -66,6 +66,8 @@ defmodule CoinTalk.BotResponder do
     Your response should directly address the most recent statement in the conversation: "#{last_message}"
     Your reply should be humorous and reflect the current market mood
     Responses must be one sentence max all lowercase with no punctuation
+    Chat history of last 2 minutes:
+    #{chat_history_str}
     Market Data Context:
     #{market_context}
     """

@@ -20,16 +20,14 @@ if System.get_env("PHX_SERVER") do
   config :coin_talk, CoinTalkWeb.Endpoint, server: true
 end
 
-# Load Gemini API key
+
+DotenvParser.load_file(".env")
+
 config :coin_talk, CoinTalk.BotResponder,
   gemini_api_key:
-    System.get_env("GEMINI_API_KEY") || raise("Missing GEMINI_API_KEY environment variable")
-
-# Load Coin Market Cap API key
-config :coin_talk, CoinTalk.BotResponder,
+    System.get_env("GEMINI_API_KEY") || raise("Missing GEMINI_API_KEY environment variable"),
   coinmarketcap_api_key:
-    System.get_env("COINMARKETCAP_API_KEY") ||
-      raise("Missing COINMARKETCAP_API_KEY environment variable")
+    System.get_env("COINMARKETCAP_API_KEY") || raise("Missing COINMARKETCAP_API_KEY environment variable")
 
 if config_env() == :prod do
   database_url =
