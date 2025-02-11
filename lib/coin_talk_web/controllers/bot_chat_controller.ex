@@ -9,7 +9,7 @@ defmodule CoinTalkWeb.BotChatController do
     IO.puts("\n=== Bot Chat Conversation ===")
 
     Enum.each(messages, fn msg ->
-      IO.puts("[#{msg.inserted_at}] #{msg.sender}: #{msg.content}")
+      IO.puts("[#{NaiveDateTime.to_string(msg.inserted_at)}] #{msg.sender}: #{msg.content}")
     end)
 
     IO.puts("=== End of Conversation ===\n")

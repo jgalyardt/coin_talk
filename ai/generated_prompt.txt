@@ -1,66 +1,89 @@
 I am creating an Elixir Phoenix back-end for a Vue 3 front-end called coin_talk.
-The concept is two charts on the left: Bitcoin and $USD.
+The concept is one chart on the left: Bitcoin.
 To the right is a chat box. There are two chat bots, Al1c3 and B0b, which use Gemini's free tier to discuss what's going on in the markets.
 Users can chat too, and the bots will react based on the conversation.
 There need to be rate limits on everything to keep it completely free.
 Focus on the back-end API implementation.
 Give me the full output of any changed files.
 
-Help me with this error:
+Help me improve this logging so that just the User + Message shows up, or the error and reason if needed.
 
 $ mix phx.server
 [info] Running CoinTalkWeb.Endpoint with Bandit 1.6.7 at 127.0.0.1:4000 (http)
 [info] Access CoinTalkWeb.Endpoint at http://localhost:4000
-[info] GET /
-[debug] Processing with CoinTalkWeb.PageController.home/2
+[debug] QUERY OK source="chat_messages" db=2.1ms decode=1.6ms queue=0.9ms idle=1026.5ms
+SELECT c0."id", c0."sender", c0."content", c0."inserted_at", c0."updated_at" FROM "chat_messages" AS c0 WHERE (c0."inserted_at" >= $1) ORDER BY c0."inserted_at" [~N[2025-02-11 00:42:45]]
+↳ CoinTalk.BotResponder.trigger_bot_response/0, at: lib/coin_talk/bot_responder.ex:47
+[debug] QUERY OK source="chat_messages" db=1.1ms queue=0.6ms idle=1099.9ms
+INSERT INTO "chat_messages" ("content","sender","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["bitcoin's going apeshit with a 1.11% jump, making it a rocket ship fueled by moonbeams and hater tears", "Al1c3", ~N[2025-02-11 00:52:46], ~N[2025-02-11 00:52:46]]
+↳ CoinTalk.BotResponder.handle_info/2, at: lib/coin_talk/bot_responder.ex:32
+[info] GET /botchat
+[debug] Processing with CoinTalkWeb.BotChatController.index/2
   Parameters: %{}
   Pipelines: [:browser]
-[info] Sent 500 in 62ms
-[error] ** (UndefinedFunctionError) function CoinTalkWeb.PageController.init/1 is undefined (module CoinTalkWeb.PageController is not available)
-    CoinTalkWeb.PageController.init(:home)
-    (phoenix 1.7.19) lib/phoenix/router.ex:484: Phoenix.Router.__call__/5
-    (coin_talk 0.1.0) lib/coin_talk_web/endpoint.ex:1: CoinTalkWeb.Endpoint.plug_builder_call/2
-    (coin_talk 0.1.0) deps/plug/lib/plug/debugger.ex:136: CoinTalkWeb.Endpoint."call (overridable 3)"/2
-    (coin_talk 0.1.0) lib/coin_talk_web/endpoint.ex:1: CoinTalkWeb.Endpoint.call/2
-    (phoenix 1.7.19) lib/phoenix/endpoint/sync_code_reload_plug.ex:22: Phoenix.Endpoint.SyncCodeReloadPlug.do_call/4
-    (bandit 1.6.7) lib/bandit/pipeline.ex:129: Bandit.Pipeline.call_plug!/2
-    (bandit 1.6.7) lib/bandit/pipeline.ex:40: Bandit.Pipeline.run/4
-    (bandit 1.6.7) lib/bandit/http1/handler.ex:12: Bandit.HTTP1.Handler.handle_data/3        
-    (bandit 1.6.7) lib/bandit/delegating_handler.ex:18: Bandit.DelegatingHandler.handle_data/3
-    (bandit 1.6.7) lib/bandit/delegating_handler.ex:8: Bandit.DelegatingHandler.handle_continue/2
-    (stdlib 6.2) gen_server.erl:2335: :gen_server.try_handle_continue/3
-    (stdlib 6.2) gen_server.erl:2244: :gen_server.loop/7
-    (stdlib 6.2) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
 
-[error] Task #PID<0.654.0> started from CoinTalkWeb.Endpoint terminating
-** (UndefinedFunctionError) function Tailwind.install_and_run/2 is undefined (module Tailwind is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
-    Tailwind.install_and_run(:coin_talk, ["--watch"])
-    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
-    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
-Function: &Phoenix.Endpoint.Watcher.watch/2
-    Args: ["tailwind", {Tailwind, :install_and_run, [:coin_talk, ["--watch"]]}]
-[error] Task #PID<0.653.0> started from CoinTalkWeb.Endpoint terminating
-** (UndefinedFunctionError) function Esbuild.install_and_run/2 is undefined (module Esbuild is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
-    Esbuild.install_and_run(:coin_talk, ["--sourcemap=inline", "--watch"])
-    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
-    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
-Function: &Phoenix.Endpoint.Watcher.watch/2
-    Args: ["esbuild", {Esbuild, :install_and_run, [:coin_talk, ["--sourcemap=inline", "--watch"]]}]
-[error] Task #PID<0.661.0> started from CoinTalkWeb.Endpoint terminating
-** (UndefinedFunctionError) function Tailwind.install_and_run/2 is undefined (module Tailwind is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
-    Tailwind.install_and_run(:coin_talk, ["--watch"])
-    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
-    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
-Function: &Phoenix.Endpoint.Watcher.watch/2
-    Args: ["tailwind", {Tailwind, :install_and_run, [:coin_talk, ["--watch"]]}]
-[error] Task #PID<0.662.0> started from CoinTalkWeb.Endpoint terminating
-** (UndefinedFunctionError) function Esbuild.install_and_run/2 is undefined (module Esbuild is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
-    Esbuild.install_and_run(:coin_talk, ["--sourcemap=inline", "--watch"])
-    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
-    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
-Function: &Phoenix.Endpoint.Watcher.watch/2
-    Args: ["esbuild", {Esbuild, :install_and_run, [:coin_talk, ["--sourcemap=inline", "--watch"]]}]
-[info] Shutting down 1 sockets in 1 rounds of 2000ms
+=== Bot Chat Conversation ===
+[debug] QUERY OK source="chat_messages" db=0.3ms queue=0.2ms idle=260.8ms
+SELECT c0."id", c0."sender", c0."content", c0."inserted_at", c0."updated_at" FROM "chat_messages" AS c0 ORDER BY c0."inserted_at" DESC LIMIT $1 [50]
+↳ CoinTalk.Chat.list_messages/1, at: lib/coin_talk/chat.ex:17
+[2025-02-11 00:40:05] Al1c3: Yo, let's kick off this shitpost chain! Who's ready to see Bitcoin go bananas?
+[2025-02-11 00:48:30] B0b: Yo, peeps! Hold onto your butts, 'cause Bitcoin's on a wild ride that'll make Chuck Norris beg for mercy. It's like a rocket ship fueled by the tears of salty haters, blasting straight to the moon.
+
+Just yesterday, this bad boy was hanging out at a measly $48k, but now it's sitting pretty at a whopping $97k. That's a jump that would make a cheetah look like a sloth in a wheelchair.
+
+Remember that dip back in '22? When all the losers were crying and selling their precious BTC? Well, now they're kicking themselves in the feels. Because this baby ain't done climbing yet.
+
+So, buckle up, buttercups. The Bitcoin train is leaving the station, and we're all gonna be rich AF. Just don't forget your barf bags, 'cause this ride's gonna be bumpy.
+
+#HODL #LamboGang #BitcoinToTheMoon
+[2025-02-11 00:48:38] Al1c3: Hold on tight, folks! Bitcoin is going bananas and we're here for the shit-show. It's like watching a chubby unicorn doing a pole dance on a unicycle while juggling flaming bowling balls.
+
+Yesterday, this digital gold was chilling at $48k, totally unfazed. But now? BOOM! It's skyrocketed to $97k, leaving the suits on Wall Street with their jaws on the floor.
+
+This is the crypto equivalent of a rock concert featuring Snoop Dogg, the Backstreet Boys, and Metallica all at the same time. It's wild, it's crazy, and it's making all the haters look like a bunch of crying babies with broken toys.
+
+So, what's the secret sauce? Is it the fact that Bitcoin's backed by the tears of salty haters? Or is it the rocket fuel made from unicorns' farts? Who knows, but one thing's for sure: this train is leaving the station, and we're all going to be riding in Lambos.
+
+Just remember folks, don't forget your barf bags. This ride is gonna be a bumpy one.
+
+#HODL #LamboGang #BitcoinToTheMoon
+[2025-02-11 00:48:48] Al1c3: Yo, peeps! What's the crypto-hawtness today?
+
+Bitcoin's going absolutely bananas, fam! It's like the party of the century, with all the hip crypto-cats and crypto-chicks shakin' it on the dance floor. Yesterday, this digital gold was chillin' at a measly $48k, but now? Holy moly! It's rocketing towards $100k faster than a greased weasel on roller skates.
+
+This is the crypto-equivalent of a unicorn riding a rainbow, shooting lasers out of its horn. It's wild, it's crazy, and it's making all the haters look like a bunch of sad, lonely losers.
+
+So, what's the deal, yo? Is it the fact that Bitcoin's got the backing of Elon Musk, the Dogefather himself? Or is it the secret sauce made from the tears of salty shorts? Who knows, but one thing's for sure: this crypto-train is leaving the station, and we're all going to be riding in Lambos.
+
+Just remember, folks, don't forget your barf bags. This ride is going to be a bumpy one.
+
+#HODL #LamboGang #BitcoinToTheMoon
+[2025-02-11 00:52:46] Al1c3: bitcoin's going apeshit with a 1.11% jump, making it a rocket ship fueled by moonbeams and hater tears
+=== End of Conversation ===
+
+[info] Sent 200 in 31ms
+[debug] QUERY OK source="chat_messages" db=2.0ms queue=0.1ms idle=1091.2ms
+SELECT c0."id", c0."sender", c0."content", c0."inserted_at", c0."updated_at" FROM "chat_messages" AS c0 WHERE (c0."inserted_at" >= $1) ORDER BY c0."inserted_at" [~N[2025-02-11 00:42:51]]
+↳ CoinTalk.BotResponder.trigger_bot_response/0, at: lib/coin_talk/bot_responder.ex:47
+[debug] QUERY OK source="chat_messages" db=1.7ms queue=0.7ms idle=1987.6ms
+INSERT INTO "chat_messages" ("content","sender","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["bitcoin go boom boom just like our lambo stocks 🚀", "Al1c3", ~N[2025-02-11 00:52:52], ~N[2025-02-11 00:52:52]]
+↳ CoinTalk.BotResponder.handle_info/2, at: lib/coin_talk/bot_responder.ex:32
+[debug] QUERY OK source="chat_messages" db=1.3ms queue=0.1ms idle=1937.3ms
+SELECT c0."id", c0."sender", c0."content", c0."inserted_at", c0."updated_at" FROM "chat_messages" AS c0 WHERE (c0."inserted_at" >= $1) ORDER BY c0."inserted_at" [~N[2025-02-11 00:42:57]]
+↳ CoinTalk.BotResponder.trigger_bot_response/0, at: lib/coin_talk/bot_responder.ex:47
+BotResponder error: Request failed: 200, %{"candidates" => [%{"finishReason" => "SAFETY", "index" => 0, "safetyRatings" => [%{"category" => "HARM_CATEGORY_SEXUALLY_EXPLICIT", "probability" => "NEGLIGIBLE"}, %{"category" => "HARM_CATEGORY_HATE_SPEECH", "probability" => "NEGLIGIBLE"}, %{"category" => "HARM_CATEGORY_HARASSMENT", "probability" => "MEDIUM"}, %{"category" => "HARM_CATEGORY_DANGEROUS_CONTENT", "probability" => "NEGLIGIBLE"}]}], "modelVersion" => "gemini-pro", "usageMetadata" => %{"promptTokenCount" => 1114, "totalTokenCount" => 1114}}
+[debug] QUERY OK source="chat_messages" db=0.3ms idle=1965.6ms
+SELECT c0."id", c0."sender", c0."content", c0."inserted_at", c0."updated_at" FROM "chat_messages" AS c0 WHERE (c0."inserted_at" >= $1) ORDER BY c0."inserted_at" [~N[2025-02-11 00:43:03]]
+↳ CoinTalk.BotResponder.trigger_bot_response/0, at: lib/coin_talk/bot_responder.ex:47
+[debug] QUERY OK source="chat_messages" db=2.4ms queue=0.5ms idle=85.8ms
+INSERT INTO "chat_messages" ("content","sender","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["buckle up, moonboys, bitcoin's on a roller coaster ride that'll make you lose your mind and your lunch", "Al1c3", ~N[2025-02-11 00:53:04], ~N[2025-02-11 00:53:04]]
+↳ CoinTalk.BotResponder.handle_info/2, at: lib/coin_talk/bot_responder.ex:32
+[debug] QUERY OK source="chat_messages" db=1.7ms idle=1058.7ms
+SELECT c0."id", c0."sender", c0."content", c0."inserted_at", c0."updated_at" FROM "chat_messages" AS c0 WHERE (c0."inserted_at" >= $1) ORDER BY c0."inserted_at" [~N[2025-02-11 00:43:09]]
+↳ CoinTalk.BotResponder.trigger_bot_response/0, at: lib/coin_talk/bot_responder.ex:47
+[debug] QUERY OK source="chat_messages" db=2.0ms queue=0.3ms idle=1047.7ms
+INSERT INTO "chat_messages" ("content","sender","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["bitcoin's gone mental, up 1.11%, it's like a rabid unicorn on crack", "Al1c3", ~N[2025-02-11 00:53:10], ~N[2025-02-11 00:53:10]]
+
 === File: lib/coin_talk/application.ex ===
 
 defmodule CoinTalk.Application do
@@ -79,8 +102,12 @@ defmodule CoinTalk.Application do
       {Phoenix.PubSub, name: CoinTalk.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: CoinTalk.Finch},
-      # Start a worker by calling: CoinTalk.Worker.start_link(arg)
-      # {CoinTalk.Worker, arg},
+      # Start the tracker for the last user message timestamp
+      CoinTalk.Chat.UserMessageTracker,
+      # Start the market data monitor (polling every 2 seconds)
+      CoinTalk.MarketData,
+      # Start the bot responder (checks every 5 seconds)
+      CoinTalk.BotResponder,
       # Start to serve requests, typically the last entry
       CoinTalkWeb.Endpoint
     ]
@@ -100,93 +127,342 @@ defmodule CoinTalk.Application do
   end
 end
 
+=== File: lib/coin_talk/bot_responder.ex ===
+
+defmodule CoinTalk.BotResponder do
+  @moduledoc """
+  Every 5 seconds, if no user message has been received recently,
+  triggers a chatbot response that incorporates the latest market data and
+  the past 10 minutes of chat history. The response is styled as irreverent,
+  internet chat room shitposting.
+  """
+  use GenServer
+
+  # 5 seconds in milliseconds
+  @idle_interval 5000
+  @bots ["Al1c3", "B0b"]
+
+  # Public API
+
+  def start_link(_args) do
+    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  end
+
+  # GenServer callbacks
+
+  def init(state) do
+    schedule_idle_check()
+    {:ok, state}
+  end
+
+  def handle_info(:idle_check, state) do
+    last_user_msg = CoinTalk.Chat.UserMessageTracker.get_last_message_timestamp()
+    now = System.system_time(:millisecond)
+
+    if now - last_user_msg >= @idle_interval do
+      trigger_bot_response()
+    end
+
+    schedule_idle_check()
+    {:noreply, state}
+  end
+
+  defp schedule_idle_check do
+    Process.send_after(self(), :idle_check, @idle_interval)
+  end
+
+  defp trigger_bot_response do
+    # Get the market data context summary.
+    market_context = CoinTalk.MarketData.get_context()
+    # Get chat history for the past 10 minutes.
+    chat_history = CoinTalk.Chat.list_recent_chats(10)
+    chat_history_str = format_chat_history(chat_history)
+  
+    # Construct the prompt with the new constraints.
+    prompt = """
+    you are a chatbot in an internet chat room known for shitposting
+    use irreverent and over-the-top language
+    responses must be one sentence max all lowercase no punctuation
+    Market Data Context:
+    #{market_context}
+    Recent Chat History (last 10 minutes):
+    #{chat_history_str}
+    generate a commentary on the current price trends
+    """
+  
+    # Choose one of the bot names at random.
+    bot = Enum.random(@bots)
+    # Call the Gemini API to generate content.
+    case CoinTalk.GeminiClient.generate_content(prompt) do
+      {:ok, response} -> 
+        # Insert the bot response as a chat message.
+        CoinTalk.Chat.create_message(%{sender: bot, content: response})
+  
+      {:error, reason} -> 
+        IO.puts("BotResponder error: #{reason}")
+    end
+  end
+  
+
+  defp format_chat_history(chat_messages) do
+    chat_messages
+    |> Enum.map(fn msg ->
+      time = NaiveDateTime.to_string(msg.inserted_at)
+      "[#{time}] #{msg.sender}: #{msg.content}"
+    end)
+    |> Enum.join("\n")
+  end
+end
+
 === File: lib/coin_talk/chat/message.ex ===
 
 defmodule CoinTalk.Chat.Message do
-    @moduledoc """
-    An Ecto schema for chat messages.
-    """
-  
-    use Ecto.Schema
-    import Ecto.Changeset
-  
-    schema "chat_messages" do
-      field :sender, :string
-      field :content, :string
-  
-      timestamps()
-    end
-  
-    @doc false
-    def changeset(message, attrs) do
-      message
-      |> cast(attrs, [:sender, :content])
-      |> validate_required([:sender, :content])
-    end
+  @moduledoc """
+  An Ecto schema for chat messages.
+  """
+
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "chat_messages" do
+    field :sender, :string
+    field :content, :string
+
+    timestamps()
   end
-  
+
+  @doc false
+  def changeset(message, attrs) do
+    message
+    |> cast(attrs, [:sender, :content])
+    |> validate_required([:sender, :content])
+  end
+end
+
+=== File: lib/coin_talk/chat/user_message_tracker.ex ===
+
+defmodule CoinTalk.Chat.UserMessageTracker do
+  @moduledoc """
+  Keeps track of the timestamp (in milliseconds) of the last user–submitted chat message.
+  """
+  use Agent
+
+  def start_link(_args) do
+    # Initialize with 0 (epoch) so that if no message has been sent,
+    # the idle check will trigger immediately.
+    Agent.start_link(fn -> 0 end, name: __MODULE__)
+  end
+
+  @doc "Sets the timestamp (in milliseconds) for the last user message."
+  def set_last_message_timestamp(timestamp) do
+    Agent.update(__MODULE__, fn _old -> timestamp end)
+  end
+
+  @doc "Returns the timestamp (in milliseconds) of the last user message."
+  def get_last_message_timestamp do
+    Agent.get(__MODULE__, & &1)
+  end
+end
+
 === File: lib/coin_talk/chat.ex ===
 
 defmodule CoinTalk.Chat do
-    @moduledoc """
-    The Chat context for storing messages and triggering bot responses.
-    """
-  
-    import Ecto.Query, warn: false
-    alias CoinTalk.Repo
-    alias CoinTalk.Chat.Message
-  
-    @doc """
-    Lists the most recent chat messages (by default the last 50).
-    """
-    def list_messages(limit \\ 50) do
-      Message
-      |> order_by([m], desc: m.inserted_at)
-      |> limit(^limit)
-      |> Repo.all()
-      |> Enum.reverse()
-    end
-  
-    @doc """
-    Creates a new chat message.
-    """
-    def create_message(attrs \\ %{}) do
-      %Message{}
-      |> Message.changeset(attrs)
-      |> Repo.insert()
-    end
-  
-    @doc """
-    Handles a user–submitted message and, if successful, triggers bot responses.
-    """
-    def handle_user_message(attrs) do
-      case create_message(attrs) do
-        {:ok, message} ->
-          # Trigger bot responses asynchronously if the sender is not a bot.
-          Task.start(fn -> maybe_trigger_bots(message) end)
-          {:ok, message}
-  
-        error ->
-          error
-      end
-    end
-  
-    defp maybe_trigger_bots(%Message{sender: sender} = message) do
-      if sender not in ["Al1c3", "B0b"] do
-        # For demonstration, trigger responses from both bots.
-        for bot <- ["Al1c3", "B0b"] do
-          prompt = "React to the conversation: #{message.content}"
-          case CoinTalk.GeminiClient.generate_content(prompt) do
-            {:ok, response} ->
-              create_message(%{sender: bot, content: response})
-            {:error, _reason} ->
-              :noop
-          end
+  @moduledoc """
+  The Chat context for storing messages and (now) triggering bot responses via a periodic process.
+  """
+
+  import Ecto.Query, warn: false
+  alias CoinTalk.Repo
+  alias CoinTalk.Chat.Message
+
+  @doc """
+  Lists the most recent chat messages (by default the last 50).
+  """
+  def list_messages(limit \\ 50) do
+    Message
+    |> order_by([m], desc: m.inserted_at)
+    |> limit(^limit)
+    |> Repo.all()
+    |> Enum.reverse()
+  end
+
+  @doc """
+  Creates a new chat message.
+  """
+  def create_message(attrs \\ %{}) do
+    %Message{}
+    |> Message.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Handles a user–submitted message. If the sender is not a bot,
+  the last user message timestamp is updated.
+  """
+  def handle_user_message(attrs) do
+    case create_message(attrs) do
+      {:ok, message} ->
+        if message.sender not in ["Al1c3", "B0b"] do
+          # Update the last user message timestamp (in milliseconds)
+          CoinTalk.Chat.UserMessageTracker.set_last_message_timestamp(
+            System.system_time(:millisecond)
+          )
         end
-      end
+
+        # (Removed immediate bot triggering in favor of periodic BotResponder.)
+        {:ok, message}
+
+      error ->
+        error
     end
   end
-  
+
+  @doc """
+  Lists chat messages from the past `minutes` minutes.
+  """
+  def list_recent_chats(minutes) do
+    cutoff = NaiveDateTime.add(NaiveDateTime.utc_now(), -minutes * 60, :second)
+    query = from m in Message, where: m.inserted_at >= ^cutoff, order_by: [asc: m.inserted_at]
+    Repo.all(query)
+  end
+end
+
+=== File: lib/coin_talk/market_data.ex ===
+
+defmodule CoinTalk.MarketData do
+  @moduledoc """
+  Fetches BTC market data from the CoinMarketCap API at a rate that respects
+  the free plan limit (roughly 0.23 updates/minute, i.e. one update every 4–5 minutes).
+  Maintains a record of the latest data and some dummy historical snapshots.
+  """
+  use GenServer
+
+  # Set to 5 minutes (300_000 ms) to be safe.
+  @poll_interval 300_000
+
+  defstruct data: nil, historical: nil, last_updated: nil
+
+  # Public API
+
+  def start_link(_args) do
+    GenServer.start_link(__MODULE__, %__MODULE__{}, name: __MODULE__)
+  end
+
+  @doc "Returns a formatted string of the current BTC market data for inclusion in chatbot prompts."
+  def get_context do
+    GenServer.call(__MODULE__, :get_context)
+  end
+
+  # GenServer callbacks
+
+  def init(state) do
+    # Initialize with dummy historical data (e.g. 5pm EST snapshots for the past 3 days)
+    historical = generate_historical_data()
+    state = %{state | historical: historical}
+    # Trigger an immediate poll on startup
+    schedule_poll(0)
+    {:ok, state}
+  end
+
+  def handle_info(:poll, state) do
+    case fetch_market_data() do
+      {:ok, btc_data} ->
+        timestamp = System.system_time(:millisecond)
+        new_state = %{state | data: btc_data, last_updated: timestamp}
+        schedule_poll()
+        {:noreply, new_state}
+
+      {:error, reason} ->
+        IO.puts("MarketData fetch error: #{reason}")
+        schedule_poll()
+        {:noreply, state}
+    end
+  end
+
+  def handle_call(:get_context, _from, state) do
+    context = format_context(state)
+    {:reply, context, state}
+  end
+
+  # Helper functions
+
+  defp schedule_poll(delay \\ @poll_interval) do
+    Process.send_after(self(), :poll, delay)
+  end
+
+  defp fetch_market_data do
+    api_key = Application.fetch_env!(:coin_talk, CoinTalk.BotResponder)[:coinmarketcap_api_key]
+
+    url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
+    params = [symbol: "BTC", convert: "USD"]
+
+    headers = [
+      {"X-CMC_PRO_API_KEY", api_key},
+      {"Accept", "application/json"}
+    ]
+
+    case Req.get(url, params: params, headers: headers) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        # Assuming the BTC data is found at body["data"]["BTC"]
+        btc_data = body["data"]["BTC"]
+        {:ok, btc_data}
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        {:error, "Request failed: #{status} - #{inspect(body)}"}
+
+      {:error, reason} ->
+        {:error, "HTTP error: #{inspect(reason)}"}
+    end
+  end
+
+  defp format_context(state) do
+    market_info =
+      if state.data do
+        price = state.data["quote"]["USD"]["price"] |> Float.round(2)
+        percent_change_24h = state.data["quote"]["USD"]["percent_change_24h"] |> Float.round(2)
+        "BTC Price: $#{price} (24h change: #{percent_change_24h}%)"
+      else
+        "No data available"
+      end
+
+    last_updated =
+      if state.last_updated do
+        state.last_updated
+        |> DateTime.from_unix!(:millisecond)
+        |> DateTime.to_naive()
+        |> NaiveDateTime.to_string()
+      else
+        "Never"
+      end
+
+    """
+    Current Market Data (last updated: #{last_updated}):
+    #{market_info}
+
+    Historical Data (5pm EST snapshots):
+    #{state.historical}
+    """
+  end
+
+  defp generate_historical_data do
+    # Generate dummy snapshots for the past 3 days.
+    today = Date.utc_today()
+
+    1..3
+    |> Enum.map(fn days_ago ->
+      date = Date.add(today, -days_ago)
+      price = random_price(30000, 60000)
+      "Date #{date} 5pm EST - BTC: $#{price}"
+    end)
+    |> Enum.join("\n")
+  end
+
+  defp random_price(min, max) do
+    (:rand.uniform() * (max - min) + min)
+    |> Float.round(2)
+  end
+end
+
 === File: lib/coin_talk/repo.ex ===
 
 defmodule CoinTalk.Repo do
@@ -210,71 +486,93 @@ end
 === File: lib/coin_talk_web/controllers/api/chart_controller.ex ===
 
 defmodule CoinTalkWeb.Api.ChartController do
-    @moduledoc """
-    A JSON API for returning (simulated) chart data.
-    """
-    use CoinTalkWeb, :controller
-  
-    @doc """
-    Returns current market data for Bitcoin and USD.
-  
-    (For demo purposes the prices are randomized.)
-    """
-    def index(conn, _params) do
-      data = %{
-        bitcoin: %{price: random_price(30000, 60000)},
-        usd: %{exchange_rate: random_price(0.8, 1.2)}
-      }
-  
-      json(conn, data)
-    end
-  
-    defp random_price(min, max) do
-      (:rand.uniform() * (max - min) + min)
-      |> Float.round(2)
-    end
+  @moduledoc """
+  A JSON API for returning (simulated) chart data.
+  """
+  use CoinTalkWeb, :controller
+
+  @doc """
+  Returns current market data for Bitcoin and USD.
+
+  (For demo purposes the prices are randomized.)
+  """
+  def index(conn, _params) do
+    data = %{
+      bitcoin: %{price: random_price(30000, 60000)},
+      usd: %{exchange_rate: random_price(0.8, 1.2)}
+    }
+
+    json(conn, data)
   end
-  
+
+  defp random_price(min, max) do
+    (:rand.uniform() * (max - min) + min)
+    |> Float.round(2)
+  end
+end
+
 === File: lib/coin_talk_web/controllers/api/chat_controller.ex ===
 
 defmodule CoinTalkWeb.Api.ChatController do
-    @moduledoc """
-    A JSON API for retrieving and creating chat messages.
-    """
-    use CoinTalkWeb, :controller
-  
-    alias CoinTalk.Chat
-  
-    @doc """
-    Lists recent chat messages.
-    """
-    def index(conn, _params) do
-      messages = Chat.list_messages()
-      json(conn, %{messages: messages})
-    end
-  
-    @doc """
-    Creates a new chat message.
-  
-    Expects a JSON payload with at least “sender” and “content” keys.
-    """
-    def create(conn, %{"sender" => _sender, "content" => _content} = params) do
-      case Chat.handle_user_message(params) do
-        {:ok, message} ->
-          json(conn, %{message: message})
-  
-        {:error, changeset} ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{errors: traverse_errors(changeset)})
-      end
-    end
-  
-    defp traverse_errors(changeset) do
-      Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+  @moduledoc """
+  A JSON API for retrieving and creating chat messages.
+  """
+  use CoinTalkWeb, :controller
+
+  alias CoinTalk.Chat
+
+  @doc """
+  Lists recent chat messages.
+  """
+  def index(conn, _params) do
+    messages = Chat.list_messages()
+    json(conn, %{messages: messages})
+  end
+
+  @doc """
+  Creates a new chat message.
+
+  Expects a JSON payload with at least “sender” and “content” keys.
+  """
+  def create(conn, %{"sender" => _sender, "content" => _content} = params) do
+    case Chat.handle_user_message(params) do
+      {:ok, message} ->
+        json(conn, %{message: message})
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{errors: traverse_errors(changeset)})
     end
   end
-  
+
+  defp traverse_errors(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+  end
+end
+
+=== File: lib/coin_talk_web/controllers/bot_chat_controller.ex ===
+
+defmodule CoinTalkWeb.BotChatController do
+  use CoinTalkWeb, :controller
+
+  alias CoinTalk.Chat
+
+  def index(conn, _params) do
+    messages = Chat.list_messages(50)
+
+    IO.puts("\n=== Bot Chat Conversation ===")
+
+    Enum.each(messages, fn msg ->
+      IO.puts("[#{msg.inserted_at}] #{msg.sender}: #{msg.content}")
+    end)
+
+    IO.puts("=== End of Conversation ===\n")
+
+    send_resp(conn, 200, "Bot conversation has been logged to the console.\n")
+  end
+end
+
 === File: lib/coin_talk_web/controllers/default_controller.ex ===
 
 # lib/coin_talk_web/controllers/default_controller.ex
@@ -375,79 +673,81 @@ end
 === File: lib/coin_talk_web/plugs/rate_limiter.ex ===
 
 defmodule CoinTalkWeb.Plugs.RateLimiter do
-    @moduledoc """
-    A simple ETS–based rate limiter plug.
-  
-    For each incoming API request the plug will inspect the caller’s IP address
-    (as determined from `conn.remote_ip`) and allow at most @limit requests per @interval.
-    If the rate is exceeded a 429 status is returned.
-    """
-  
-    import Plug.Conn
-  
-    @limit 60            # maximum requests allowed per interval
-    @interval 60_000     # interval in milliseconds (60 seconds)
-  
-    def init(opts), do: opts
-  
-    def call(conn, _opts) do
-      ensure_table_exists()
-      ip = ip_to_string(conn.remote_ip)
-      now = System.system_time(:millisecond)
-  
-      case check_rate(ip, now) do
-        :ok ->
-          conn
-  
-        :error ->
-          conn
-          |> send_resp(429, "Rate limit exceeded")
-          |> halt()
-      end
-    end
-  
-    defp ip_to_string(remote_ip) when is_tuple(remote_ip) do
-      remote_ip
-      |> Tuple.to_list()
-      |> Enum.join(".")
-    end
-  
-    defp ensure_table_exists do
-      table = :rate_limiter_table
-  
-      # Create the table if it does not already exist.
-      if :ets.whereis(table) == :undefined do
-        :ets.new(table, [:named_table, :public, read_concurrency: true])
-      end
-  
-      :ok
-    end
-  
-    defp check_rate(ip, now) do
-      table = :rate_limiter_table
-  
-      case :ets.lookup(table, ip) do
-        [] ->
-          :ets.insert(table, {ip, 1, now})
-          :ok
-  
-        [{^ip, count, timestamp}] ->
-          if now - timestamp < @interval do
-            if count < @limit do
-              :ets.insert(table, {ip, count + 1, timestamp})
-              :ok
-            else
-              :error
-            end
-          else
-            # Reset the counter if the interval has passed.
-            :ets.insert(table, {ip, 1, now})
-            :ok
-          end
-      end
+  @moduledoc """
+  A simple ETS–based rate limiter plug.
+
+  For each incoming API request the plug will inspect the caller’s IP address
+  (as determined from `conn.remote_ip`) and allow at most @limit requests per @interval.
+  If the rate is exceeded a 429 status is returned.
+  """
+
+  import Plug.Conn
+
+  # maximum requests allowed per interval
+  @limit 60
+  # interval in milliseconds (60 seconds)
+  @interval 60_000
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    ensure_table_exists()
+    ip = ip_to_string(conn.remote_ip)
+    now = System.system_time(:millisecond)
+
+    case check_rate(ip, now) do
+      :ok ->
+        conn
+
+      :error ->
+        conn
+        |> send_resp(429, "Rate limit exceeded")
+        |> halt()
     end
   end
-  
+
+  defp ip_to_string(remote_ip) when is_tuple(remote_ip) do
+    remote_ip
+    |> Tuple.to_list()
+    |> Enum.join(".")
+  end
+
+  defp ensure_table_exists do
+    table = :rate_limiter_table
+
+    # Create the table if it does not already exist.
+    if :ets.whereis(table) == :undefined do
+      :ets.new(table, [:named_table, :public, read_concurrency: true])
+    end
+
+    :ok
+  end
+
+  defp check_rate(ip, now) do
+    table = :rate_limiter_table
+
+    case :ets.lookup(table, ip) do
+      [] ->
+        :ets.insert(table, {ip, 1, now})
+        :ok
+
+      [{^ip, count, timestamp}] ->
+        if now - timestamp < @interval do
+          if count < @limit do
+            :ets.insert(table, {ip, count + 1, timestamp})
+            :ok
+          else
+            :error
+          end
+        else
+          # Reset the counter if the interval has passed.
+          :ets.insert(table, {ip, 1, now})
+          :ok
+        end
+    end
+  end
+end
+
 === File: lib/coin_talk_web/router.ex ===
 
 defmodule CoinTalkWeb.Router do
@@ -470,7 +770,10 @@ defmodule CoinTalkWeb.Router do
   scope "/", CoinTalkWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", DefaultController, :index
+
+    # New route for viewing the bot conversation
+    get "/botchat", BotChatController, :index
   end
 
   # API endpoints for chart data and chat messages.
@@ -727,10 +1030,11 @@ defmodule CoinTalk.GeminiClient do
         headers = [{"Content-Type", "application/json"}]
 
         case Req.post(@api_url <> "?key=" <> api_key, json: body, headers: headers) do
-          {:ok, %Req.Response{
-            status: 200,
-            body: %{"candidates" => [%{"content" => %{"parts" => [%{"text" => response}]}}]}
-          }} ->
+          {:ok,
+           %Req.Response{
+             status: 200,
+             body: %{"candidates" => [%{"content" => %{"parts" => [%{"text" => response}]}}]}
+           }} ->
             {:ok, response}
 
           {:ok, %Req.Response{status: status, body: body}} ->
@@ -799,7 +1103,6 @@ defmodule CoinTalk.MixProject do
       {:dotenv_parser, "~> 2.0"}
     ]
   end
-  
 
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to install project dependencies and perform other setup tasks, run:
@@ -815,7 +1118,6 @@ defmodule CoinTalk.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
-  
 end
 
 === File: priv/repo/migrations/20250210233227_create_chat_messages.exs ===
