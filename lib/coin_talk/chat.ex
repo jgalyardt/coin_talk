@@ -36,7 +36,9 @@ defmodule CoinTalk.Chat do
       {:ok, message} ->
         if message.sender not in ["Al1c3", "B0b"] do
           # Update the last user message timestamp (in milliseconds)
-          CoinTalk.Chat.UserMessageTracker.set_last_message_timestamp(System.system_time(:millisecond))
+          CoinTalk.Chat.UserMessageTracker.set_last_message_timestamp(
+            System.system_time(:millisecond)
+          )
         end
 
         # (Removed immediate bot triggering in favor of periodic BotResponder.)
@@ -54,10 +56,5 @@ defmodule CoinTalk.Chat do
     cutoff = NaiveDateTime.add(NaiveDateTime.utc_now(), -minutes * 60, :second)
     query = from m in Message, where: m.inserted_at >= ^cutoff, order_by: [asc: m.inserted_at]
     Repo.all(query)
-  end
-
-  # (Optional: Remove or repurpose the old maybe_trigger_bots/1 function.)
-  defp maybe_trigger_bots(_message) do
-    :noop
   end
 end

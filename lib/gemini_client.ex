@@ -18,10 +18,11 @@ defmodule CoinTalk.GeminiClient do
         headers = [{"Content-Type", "application/json"}]
 
         case Req.post(@api_url <> "?key=" <> api_key, json: body, headers: headers) do
-          {:ok, %Req.Response{
-            status: 200,
-            body: %{"candidates" => [%{"content" => %{"parts" => [%{"text" => response}]}}]}
-          }} ->
+          {:ok,
+           %Req.Response{
+             status: 200,
+             body: %{"candidates" => [%{"content" => %{"parts" => [%{"text" => response}]}}]}
+           }} ->
             {:ok, response}
 
           {:ok, %Req.Response{status: status, body: body}} ->

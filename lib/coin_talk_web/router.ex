@@ -18,8 +18,10 @@ defmodule CoinTalkWeb.Router do
   scope "/", CoinTalkWeb do
     pipe_through :browser
 
-    # Changed from PageController :home to DefaultController :index
     get "/", DefaultController, :index
+
+    # New route for viewing the bot conversation
+    get "/botchat", BotChatController, :index
   end
 
   # API endpoints for chart data and chat messages.

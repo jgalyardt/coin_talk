@@ -52,7 +52,6 @@ defmodule CoinTalk.MixProject do
       {:dotenv_parser, "~> 2.0"}
     ]
   end
-  
 
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to install project dependencies and perform other setup tasks, run:
@@ -68,5 +67,4 @@ defmodule CoinTalk.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
-  
 end
