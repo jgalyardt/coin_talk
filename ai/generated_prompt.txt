@@ -5,6 +5,62 @@ Users can chat too, and the bots will react based on the conversation.
 There need to be rate limits on everything to keep it completely free.
 Focus on the back-end API implementation.
 Give me the full output of any changed files.
+
+Help me with this error:
+
+$ mix phx.server
+[info] Running CoinTalkWeb.Endpoint with Bandit 1.6.7 at 127.0.0.1:4000 (http)
+[info] Access CoinTalkWeb.Endpoint at http://localhost:4000
+[info] GET /
+[debug] Processing with CoinTalkWeb.PageController.home/2
+  Parameters: %{}
+  Pipelines: [:browser]
+[info] Sent 500 in 62ms
+[error] ** (UndefinedFunctionError) function CoinTalkWeb.PageController.init/1 is undefined (module CoinTalkWeb.PageController is not available)
+    CoinTalkWeb.PageController.init(:home)
+    (phoenix 1.7.19) lib/phoenix/router.ex:484: Phoenix.Router.__call__/5
+    (coin_talk 0.1.0) lib/coin_talk_web/endpoint.ex:1: CoinTalkWeb.Endpoint.plug_builder_call/2
+    (coin_talk 0.1.0) deps/plug/lib/plug/debugger.ex:136: CoinTalkWeb.Endpoint."call (overridable 3)"/2
+    (coin_talk 0.1.0) lib/coin_talk_web/endpoint.ex:1: CoinTalkWeb.Endpoint.call/2
+    (phoenix 1.7.19) lib/phoenix/endpoint/sync_code_reload_plug.ex:22: Phoenix.Endpoint.SyncCodeReloadPlug.do_call/4
+    (bandit 1.6.7) lib/bandit/pipeline.ex:129: Bandit.Pipeline.call_plug!/2
+    (bandit 1.6.7) lib/bandit/pipeline.ex:40: Bandit.Pipeline.run/4
+    (bandit 1.6.7) lib/bandit/http1/handler.ex:12: Bandit.HTTP1.Handler.handle_data/3        
+    (bandit 1.6.7) lib/bandit/delegating_handler.ex:18: Bandit.DelegatingHandler.handle_data/3
+    (bandit 1.6.7) lib/bandit/delegating_handler.ex:8: Bandit.DelegatingHandler.handle_continue/2
+    (stdlib 6.2) gen_server.erl:2335: :gen_server.try_handle_continue/3
+    (stdlib 6.2) gen_server.erl:2244: :gen_server.loop/7
+    (stdlib 6.2) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+[error] Task #PID<0.654.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Tailwind.install_and_run/2 is undefined (module Tailwind is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Tailwind.install_and_run(:coin_talk, ["--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["tailwind", {Tailwind, :install_and_run, [:coin_talk, ["--watch"]]}]
+[error] Task #PID<0.653.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Esbuild.install_and_run/2 is undefined (module Esbuild is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Esbuild.install_and_run(:coin_talk, ["--sourcemap=inline", "--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["esbuild", {Esbuild, :install_and_run, [:coin_talk, ["--sourcemap=inline", "--watch"]]}]
+[error] Task #PID<0.661.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Tailwind.install_and_run/2 is undefined (module Tailwind is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Tailwind.install_and_run(:coin_talk, ["--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["tailwind", {Tailwind, :install_and_run, [:coin_talk, ["--watch"]]}]
+[error] Task #PID<0.662.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Esbuild.install_and_run/2 is undefined (module Esbuild is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Esbuild.install_and_run(:coin_talk, ["--sourcemap=inline", "--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["esbuild", {Esbuild, :install_and_run, [:coin_talk, ["--sourcemap=inline", "--watch"]]}]
+[info] Shutting down 1 sockets in 1 rounds of 2000ms
 === File: lib/coin_talk/application.ex ===
 
 defmodule CoinTalk.Application do
@@ -44,6 +100,93 @@ defmodule CoinTalk.Application do
   end
 end
 
+=== File: lib/coin_talk/chat/message.ex ===
+
+defmodule CoinTalk.Chat.Message do
+    @moduledoc """
+    An Ecto schema for chat messages.
+    """
+  
+    use Ecto.Schema
+    import Ecto.Changeset
+  
+    schema "chat_messages" do
+      field :sender, :string
+      field :content, :string
+  
+      timestamps()
+    end
+  
+    @doc false
+    def changeset(message, attrs) do
+      message
+      |> cast(attrs, [:sender, :content])
+      |> validate_required([:sender, :content])
+    end
+  end
+  
+=== File: lib/coin_talk/chat.ex ===
+
+defmodule CoinTalk.Chat do
+    @moduledoc """
+    The Chat context for storing messages and triggering bot responses.
+    """
+  
+    import Ecto.Query, warn: false
+    alias CoinTalk.Repo
+    alias CoinTalk.Chat.Message
+  
+    @doc """
+    Lists the most recent chat messages (by default the last 50).
+    """
+    def list_messages(limit \\ 50) do
+      Message
+      |> order_by([m], desc: m.inserted_at)
+      |> limit(^limit)
+      |> Repo.all()
+      |> Enum.reverse()
+    end
+  
+    @doc """
+    Creates a new chat message.
+    """
+    def create_message(attrs \\ %{}) do
+      %Message{}
+      |> Message.changeset(attrs)
+      |> Repo.insert()
+    end
+  
+    @doc """
+    Handles a user–submitted message and, if successful, triggers bot responses.
+    """
+    def handle_user_message(attrs) do
+      case create_message(attrs) do
+        {:ok, message} ->
+          # Trigger bot responses asynchronously if the sender is not a bot.
+          Task.start(fn -> maybe_trigger_bots(message) end)
+          {:ok, message}
+  
+        error ->
+          error
+      end
+    end
+  
+    defp maybe_trigger_bots(%Message{sender: sender} = message) do
+      if sender not in ["Al1c3", "B0b"] do
+        # For demonstration, trigger responses from both bots.
+        for bot <- ["Al1c3", "B0b"] do
+          prompt = "React to the conversation: #{message.content}"
+          case CoinTalk.GeminiClient.generate_content(prompt) do
+            {:ok, response} ->
+              create_message(%{sender: bot, content: response})
+            {:error, _reason} ->
+              :noop
+          end
+        end
+      end
+    end
+  end
+  
 === File: lib/coin_talk/repo.ex ===
 
 defmodule CoinTalk.Repo do
@@ -64,776 +207,86 @@ defmodule CoinTalk do
   """
 end
 
-=== File: lib/coin_talk_web/components/core_components.ex ===
+=== File: lib/coin_talk_web/controllers/api/chart_controller.ex ===
 
-defmodule CoinTalkWeb.CoreComponents do
-  @moduledoc """
-  Provides core UI components.
-
-  At first glance, this module may seem daunting, but its goal is to provide
-  core building blocks for your application, such as modals, tables, and
-  forms. The components consist mostly of markup and are well-documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
-
-  The default components use Tailwind CSS, a utility-first CSS framework.
-  See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
-  how to customize them or feel free to swap in another framework altogether.
-
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
-  """
-  use Phoenix.Component
-
-  alias Phoenix.LiveView.JS
-  import CoinTalkWeb.Gettext
-
-  @doc """
-  Renders a modal.
-
-  ## Examples
-
-      <.modal id="confirm-modal">
-        This is a modal.
-      </.modal>
-
-  JS commands may be passed to the `:on_cancel` to configure
-  the closing/cancel event, for example:
-
-      <.modal id="confirm" on_cancel={JS.navigate(~p"/posts")}>
-        This is another modal.
-      </.modal>
-
-  """
-  attr :id, :string, required: true
-  attr :show, :boolean, default: false
-  attr :on_cancel, JS, default: %JS{}
-  slot :inner_block, required: true
-
-  def modal(assigns) do
-    ~H"""
-    <div
-      id={@id}
-      phx-mounted={@show && show_modal(@id)}
-      phx-remove={hide_modal(@id)}
-      data-cancel={JS.exec(@on_cancel, "phx-remove")}
-      class="relative z-50 hidden"
-    >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
-      <div
-        class="fixed inset-0 overflow-y-auto"
-        aria-labelledby={"#{@id}-title"}
-        aria-describedby={"#{@id}-description"}
-        role="dialog"
-        aria-modal="true"
-        tabindex="0"
-      >
-        <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
-            <.focus_wrap
-              id={"#{@id}-container"}
-              phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
-              phx-key="escape"
-              phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
-            >
-              <div class="absolute top-6 right-5">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
-              </div>
-              <div id={"#{@id}-content"}>
-                <%= render_slot(@inner_block) %>
-              </div>
-            </.focus_wrap>
-          </div>
-        </div>
-      </div>
-    </div>
+defmodule CoinTalkWeb.Api.ChartController do
+    @moduledoc """
+    A JSON API for returning (simulated) chart data.
     """
-  end
-
-  @doc """
-  Renders flash notices.
-
-  ## Examples
-
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
-  """
-  attr :id, :string, doc: "the optional id of flash container"
-  attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
-  attr :title, :string, default: nil
-  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
-  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
-
-  slot :inner_block, doc: "the optional inner block that renders the flash message"
-
-  def flash(assigns) do
-    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
-
-    ~H"""
-    <div
-      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
-      id={@id}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
-      role="alert"
-      class={[
-        "fixed top-2 right-2 mr-2 w-80 sm:w-96 z-50 rounded-lg p-3 ring-1",
-        @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
-        @kind == :error && "bg-rose-50 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
-      ]}
-      {@rest}
-    >
-      <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
-        <%= @title %>
-      </p>
-      <p class="mt-2 text-sm leading-5"><%= msg %></p>
-      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={gettext("close")}>
-        <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
-      </button>
-    </div>
+    use CoinTalkWeb, :controller
+  
+    @doc """
+    Returns current market data for Bitcoin and USD.
+  
+    (For demo purposes the prices are randomized.)
     """
-  end
-
-  @doc """
-  Shows the flash group with standard titles and content.
-
-  ## Examples
-
-      <.flash_group flash={@flash} />
-  """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
-
-  def flash_group(assigns) do
-    ~H"""
-    <div id={@id}>
-      <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
-      <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
-      <.flash
-        id="client-error"
-        kind={:error}
-        title={gettext("We can't find the internet")}
-        phx-disconnected={show(".phx-client-error #client-error")}
-        phx-connected={hide("#client-error")}
-        hidden
-      >
-        <%= gettext("Attempting to reconnect") %>
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash>
-
-      <.flash
-        id="server-error"
-        kind={:error}
-        title={gettext("Something went wrong!")}
-        phx-disconnected={show(".phx-server-error #server-error")}
-        phx-connected={hide("#server-error")}
-        hidden
-      >
-        <%= gettext("Hang in there while we get back on track") %>
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
-      </.flash>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a simple form.
-
-  ## Examples
-
-      <.simple_form for={@form} phx-change="validate" phx-submit="save">
-        <.input field={@form[:email]} label="Email"/>
-        <.input field={@form[:username]} label="Username" />
-        <:actions>
-          <.button>Save</.button>
-        </:actions>
-      </.simple_form>
-  """
-  attr :for, :any, required: true, doc: "the data structure for the form"
-  attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
-
-  attr :rest, :global,
-    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
-    doc: "the arbitrary HTML attributes to apply to the form tag"
-
-  slot :inner_block, required: true
-  slot :actions, doc: "the slot for form actions, such as a submit button"
-
-  def simple_form(assigns) do
-    ~H"""
-    <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="mt-10 space-y-8 bg-white">
-        <%= render_slot(@inner_block, f) %>
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
-          <%= render_slot(action, f) %>
-        </div>
-      </div>
-    </.form>
-    """
-  end
-
-  @doc """
-  Renders a button.
-
-  ## Examples
-
-      <.button>Send!</.button>
-      <.button phx-click="go" class="ml-2">Send!</.button>
-  """
-  attr :type, :string, default: nil
-  attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(disabled form name value)
-
-  slot :inner_block, required: true
-
-  def button(assigns) do
-    ~H"""
-    <button
-      type={@type}
-      class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
-        @class
-      ]}
-      {@rest}
-    >
-      <%= render_slot(@inner_block) %>
-    </button>
-    """
-  end
-
-  @doc """
-  Renders an input with label and error messages.
-
-  A `Phoenix.HTML.FormField` may be passed as argument,
-  which is used to retrieve the input name, id, and values.
-  Otherwise all attributes may be passed explicitly.
-
-  ## Types
-
-  This function accepts all HTML input types, considering that:
-
-    * You may also set `type="select"` to render a `<select>` tag
-
-    * `type="checkbox"` is used exclusively to render boolean values
-
-    * For live file uploads, see `Phoenix.Component.live_file_input/1`
-
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-  for more information. Unsupported types, such as hidden and radio,
-  are best written directly in your templates.
-
-  ## Examples
-
-      <.input field={@form[:email]} type="email" />
-      <.input name="my-input" errors={["oh no!"]} />
-  """
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
-
-  attr :type, :string,
-    default: "text",
-    values: ~w(checkbox color date datetime-local email file month number password
-               range search select tel text textarea time url week)
-
-  attr :field, Phoenix.HTML.FormField,
-    doc: "a form field struct retrieved from the form, for example: @form[:email]"
-
-  attr :errors, :list, default: []
-  attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
-  attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
-  attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
-  attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
-
-  attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
-                multiple pattern placeholder readonly required rows size step)
-
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
-
-    assigns
-    |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
-    |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
-    |> assign_new(:value, fn -> field.value end)
-    |> input()
-  end
-
-  def input(%{type: "checkbox"} = assigns) do
-    assigns =
-      assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
-      end)
-
-    ~H"""
-    <div>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
-        <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
-        <input
-          type="checkbox"
-          id={@id}
-          name={@name}
-          value="true"
-          checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
-          {@rest}
-        />
-        <%= @label %>
-      </label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "select"} = assigns) do
-    ~H"""
-    <div>
-      <.label for={@id}><%= @label %></.label>
-      <select
-        id={@id}
-        name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
-        multiple={@multiple}
-        {@rest}
-      >
-        <option :if={@prompt} value=""><%= @prompt %></option>
-        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
-      </select>
-      <.error :for={msg <- @errors}><%= msg %></.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "textarea"} = assigns) do
-    ~H"""
-    <div>
-      <.label for={@id}><%= @label %></.label>
-      <textarea
-        id={@id}
-        name={@name}
-        class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
-        ]}
-        {@rest}
-      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}><%= msg %></.error>
-    </div>
-    """
-  end
-
-  # All other inputs text, datetime-local, url, password, etc. are handled here...
-  def input(assigns) do
-    ~H"""
-    <div>
-      <.label for={@id}><%= @label %></.label>
-      <input
-        type={@type}
-        name={@name}
-        id={@id}
-        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
-        ]}
-        {@rest}
-      />
-      <.error :for={msg <- @errors}><%= msg %></.error>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a label.
-  """
-  attr :for, :string, default: nil
-  slot :inner_block, required: true
-
-  def label(assigns) do
-    ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
-      <%= render_slot(@inner_block) %>
-    </label>
-    """
-  end
-
-  @doc """
-  Generates a generic error message.
-  """
-  slot :inner_block, required: true
-
-  def error(assigns) do
-    ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
-      <%= render_slot(@inner_block) %>
-    </p>
-    """
-  end
-
-  @doc """
-  Renders a header with title.
-  """
-  attr :class, :string, default: nil
-
-  slot :inner_block, required: true
-  slot :subtitle
-  slot :actions
-
-  def header(assigns) do
-    ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
-      <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
-          <%= render_slot(@inner_block) %>
-        </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
-          <%= render_slot(@subtitle) %>
-        </p>
-      </div>
-      <div class="flex-none"><%= render_slot(@actions) %></div>
-    </header>
-    """
-  end
-
-  @doc ~S"""
-  Renders a table with generic styling.
-
-  ## Examples
-
-      <.table id="users" rows={@users}>
-        <:col :let={user} label="id"><%= user.id %></:col>
-        <:col :let={user} label="username"><%= user.username %></:col>
-      </.table>
-  """
-  attr :id, :string, required: true
-  attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
-
-  attr :row_item, :any,
-    default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
-
-  slot :col, required: true do
-    attr :label, :string
-  end
-
-  slot :action, doc: "the slot for showing user actions in the last table column"
-
-  def table(assigns) do
-    assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
-      end
-
-    ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-sm text-left leading-6 text-zinc-500">
-          <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal"><%= col[:label] %></th>
-            <th :if={@action != []} class="relative p-0 pb-4">
-              <span class="sr-only"><%= gettext("Actions") %></span>
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id={@id}
-          phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
-        >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
-            <td
-              :for={{col, i} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
-            >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  <%= render_slot(col, @row_item.(row)) %>
-                </span>
-              </div>
-            </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-                >
-                  <%= render_slot(action, @row_item.(row)) %>
-                </span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a data list.
-
-  ## Examples
-
-      <.list>
-        <:item title="Title"><%= @post.title %></:item>
-        <:item title="Views"><%= @post.views %></:item>
-      </.list>
-  """
-  slot :item, required: true do
-    attr :title, :string, required: true
-  end
-
-  def list(assigns) do
-    ~H"""
-    <div class="mt-14">
-      <dl class="-my-4 divide-y divide-zinc-100">
-        <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-zinc-500"><%= item.title %></dt>
-          <dd class="text-zinc-700"><%= render_slot(item) %></dd>
-        </div>
-      </dl>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a back navigation link.
-
-  ## Examples
-
-      <.back navigate={~p"/posts"}>Back to posts</.back>
-  """
-  attr :navigate, :any, required: true
-  slot :inner_block, required: true
-
-  def back(assigns) do
-    ~H"""
-    <div class="mt-16">
-      <.link
-        navigate={@navigate}
-        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-      >
-        <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
-        <%= render_slot(@inner_block) %>
-      </.link>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a [Heroicon](https://heroicons.com).
-
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
-
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in your `assets/tailwind.config.js`.
-
-  ## Examples
-
-      <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
-  """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
-
-  def icon(%{name: "hero-" <> _} = assigns) do
-    ~H"""
-    <span class={[@name, @class]} />
-    """
-  end
-
-  ## JS Commands
-
-  def show(js \\ %JS{}, selector) do
-    JS.show(js,
-      to: selector,
-      time: 300,
-      transition:
-        {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
-         "opacity-100 translate-y-0 sm:scale-100"}
-    )
-  end
-
-  def hide(js \\ %JS{}, selector) do
-    JS.hide(js,
-      to: selector,
-      time: 200,
-      transition:
-        {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:scale-100",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
-    )
-  end
-
-  def show_modal(js \\ %JS{}, id) when is_binary(id) do
-    js
-    |> JS.show(to: "##{id}")
-    |> JS.show(
-      to: "##{id}-bg",
-      time: 300,
-      transition: {"transition-all transform ease-out duration-300", "opacity-0", "opacity-100"}
-    )
-    |> show("##{id}-container")
-    |> JS.add_class("overflow-hidden", to: "body")
-    |> JS.focus_first(to: "##{id}-content")
-  end
-
-  def hide_modal(js \\ %JS{}, id) do
-    js
-    |> JS.hide(
-      to: "##{id}-bg",
-      transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
-    )
-    |> hide("##{id}-container")
-    |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
-    |> JS.remove_class("overflow-hidden", to: "body")
-    |> JS.pop_focus()
-  end
-
-  @doc """
-  Translates an error message using gettext.
-  """
-  def translate_error({msg, opts}) do
-    # When using gettext, we typically pass the strings we want
-    # to translate as a static argument:
-    #
-    #     # Translate the number of files with plural rules
-    #     dngettext("errors", "1 file", "%{count} files", count)
-    #
-    # However the error messages in our forms and APIs are generated
-    # dynamically, so we need to translate them by calling Gettext
-    # with our gettext backend as first argument. Translations are
-    # available in the errors.po file (as we use the "errors" domain).
-    if count = opts[:count] do
-      Gettext.dngettext(CoinTalkWeb.Gettext, "errors", msg, msg, count, opts)
-    else
-      Gettext.dgettext(CoinTalkWeb.Gettext, "errors", msg, opts)
+    def index(conn, _params) do
+      data = %{
+        bitcoin: %{price: random_price(30000, 60000)},
+        usd: %{exchange_rate: random_price(0.8, 1.2)}
+      }
+  
+      json(conn, data)
+    end
+  
+    defp random_price(min, max) do
+      (:rand.uniform() * (max - min) + min)
+      |> Float.round(2)
     end
   end
+  
+=== File: lib/coin_talk_web/controllers/api/chat_controller.ex ===
 
-  @doc """
-  Translates the errors for a field from a keyword list of errors.
-  """
-  def translate_errors(errors, field) when is_list(errors) do
-    for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+defmodule CoinTalkWeb.Api.ChatController do
+    @moduledoc """
+    A JSON API for retrieving and creating chat messages.
+    """
+    use CoinTalkWeb, :controller
+  
+    alias CoinTalk.Chat
+  
+    @doc """
+    Lists recent chat messages.
+    """
+    def index(conn, _params) do
+      messages = Chat.list_messages()
+      json(conn, %{messages: messages})
+    end
+  
+    @doc """
+    Creates a new chat message.
+  
+    Expects a JSON payload with at least “sender” and “content” keys.
+    """
+    def create(conn, %{"sender" => _sender, "content" => _content} = params) do
+      case Chat.handle_user_message(params) do
+        {:ok, message} ->
+          json(conn, %{message: message})
+  
+        {:error, changeset} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{errors: traverse_errors(changeset)})
+      end
+    end
+  
+    defp traverse_errors(changeset) do
+      Ecto.Changeset.traverse_errors(changeset, fn {msg, _opts} -> msg end)
+    end
   end
-end
+  
+=== File: lib/coin_talk_web/controllers/default_controller.ex ===
 
-=== File: lib/coin_talk_web/components/layouts.ex ===
-
-defmodule CoinTalkWeb.Layouts do
-  @moduledoc """
-  This module holds different layouts used by your application.
-
-  See the `layouts` directory for all templates available.
-  The "root" layout is a skeleton rendered as part of the
-  application router. The "app" layout is set as the default
-  layout on both `use CoinTalkWeb, :controller` and
-  `use CoinTalkWeb, :live_view`.
-  """
-  use CoinTalkWeb, :html
-
-  embed_templates "layouts/*"
-end
-
-=== File: lib/coin_talk_web/controllers/error_html.ex ===
-
-defmodule CoinTalkWeb.ErrorHTML do
-  @moduledoc """
-  This module is invoked by your endpoint in case of errors on HTML requests.
-
-  See config/config.exs.
-  """
-  use CoinTalkWeb, :html
-
-  # If you want to customize your error pages,
-  # uncomment the embed_templates/1 call below
-  # and add pages to the error directory:
-  #
-  #   * lib/coin_talk_web/controllers/error_html/404.html.heex
-  #   * lib/coin_talk_web/controllers/error_html/500.html.heex
-  #
-  # embed_templates "error_html/*"
-
-  # The default is to render a plain text page based on
-  # the template name. For example, "404.html" becomes
-  # "Not Found".
-  def render(template, _assigns) do
-    Phoenix.Controller.status_message_from_template(template)
-  end
-end
-
-=== File: lib/coin_talk_web/controllers/error_json.ex ===
-
-defmodule CoinTalkWeb.ErrorJSON do
-  @moduledoc """
-  This module is invoked by your endpoint in case of errors on JSON requests.
-
-  See config/config.exs.
-  """
-
-  # If you want to customize a particular status code,
-  # you may add your own clauses, such as:
-  #
-  # def render("500.json", _assigns) do
-  #   %{errors: %{detail: "Internal Server Error"}}
-  # end
-
-  # By default, Phoenix returns the status message from
-  # the template name. For example, "404.json" becomes
-  # "Not Found".
-  def render(template, _assigns) do
-    %{errors: %{detail: Phoenix.Controller.status_message_from_template(template)}}
-  end
-end
-
-=== File: lib/coin_talk_web/controllers/page_controller.ex ===
-
-defmodule CoinTalkWeb.PageController do
+# lib/coin_talk_web/controllers/default_controller.ex
+defmodule CoinTalkWeb.DefaultController do
   use CoinTalkWeb, :controller
 
-  def home(conn, _params) do
-    # The home page is often custom made,
-    # so skip the default app layout.
-    render(conn, :home, layout: false)
+  def index(conn, _params) do
+    json(conn, %{
+      message: "Welcome to Coin Talk",
+      version: "1.0"
+    })
   end
-end
-
-=== File: lib/coin_talk_web/controllers/page_html.ex ===
-
-defmodule CoinTalkWeb.PageHTML do
-  @moduledoc """
-  This module contains pages rendered by PageController.
-
-  See the `page_html` directory for all templates available.
-  """
-  use CoinTalkWeb, :html
-
-  embed_templates "page_html/*"
 end
 
 === File: lib/coin_talk_web/endpoint.ex ===
@@ -916,9 +369,85 @@ defmodule CoinTalkWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :coin_talk
+  use Gettext.Backend, otp_app: :coin_talk
 end
 
+=== File: lib/coin_talk_web/plugs/rate_limiter.ex ===
+
+defmodule CoinTalkWeb.Plugs.RateLimiter do
+    @moduledoc """
+    A simple ETS–based rate limiter plug.
+  
+    For each incoming API request the plug will inspect the caller’s IP address
+    (as determined from `conn.remote_ip`) and allow at most @limit requests per @interval.
+    If the rate is exceeded a 429 status is returned.
+    """
+  
+    import Plug.Conn
+  
+    @limit 60            # maximum requests allowed per interval
+    @interval 60_000     # interval in milliseconds (60 seconds)
+  
+    def init(opts), do: opts
+  
+    def call(conn, _opts) do
+      ensure_table_exists()
+      ip = ip_to_string(conn.remote_ip)
+      now = System.system_time(:millisecond)
+  
+      case check_rate(ip, now) do
+        :ok ->
+          conn
+  
+        :error ->
+          conn
+          |> send_resp(429, "Rate limit exceeded")
+          |> halt()
+      end
+    end
+  
+    defp ip_to_string(remote_ip) when is_tuple(remote_ip) do
+      remote_ip
+      |> Tuple.to_list()
+      |> Enum.join(".")
+    end
+  
+    defp ensure_table_exists do
+      table = :rate_limiter_table
+  
+      # Create the table if it does not already exist.
+      if :ets.whereis(table) == :undefined do
+        :ets.new(table, [:named_table, :public, read_concurrency: true])
+      end
+  
+      :ok
+    end
+  
+    defp check_rate(ip, now) do
+      table = :rate_limiter_table
+  
+      case :ets.lookup(table, ip) do
+        [] ->
+          :ets.insert(table, {ip, 1, now})
+          :ok
+  
+        [{^ip, count, timestamp}] ->
+          if now - timestamp < @interval do
+            if count < @limit do
+              :ets.insert(table, {ip, count + 1, timestamp})
+              :ok
+            else
+              :error
+            end
+          else
+            # Reset the counter if the interval has passed.
+            :ets.insert(table, {ip, 1, now})
+            :ok
+          end
+      end
+    end
+  end
+  
 === File: lib/coin_talk_web/router.ex ===
 
 defmodule CoinTalkWeb.Router do
@@ -935,6 +464,7 @@ defmodule CoinTalkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug CoinTalkWeb.Plugs.RateLimiter
   end
 
   scope "/", CoinTalkWeb do
@@ -943,18 +473,16 @@ defmodule CoinTalkWeb.Router do
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", CoinTalkWeb do
-  #   pipe_through :api
-  # end
+  # API endpoints for chart data and chat messages.
+  scope "/api", CoinTalkWeb.Api, as: :api do
+    pipe_through :api
+
+    get "/charts", ChartController, :index
+    resources "/chat", ChatController, only: [:index, :create]
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:coin_talk, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
@@ -1180,31 +708,41 @@ end
 === File: lib/gemini_client.ex ===
 
 defmodule CoinTalk.GeminiClient do
-    @moduledoc "Client for interacting with Google's Gemini API."
-  
-    @api_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
-    @api_key System.get_env("GEMINI_API_KEY")
-  
-    def generate_content(prompt) do
-      body = %{
-        "contents" => [%{"parts" => [%{"text" => prompt}]}]
-      }
-  
-      headers = [{"Content-Type", "application/json"}]
-  
-      case Req.post(@api_url <> "?key=" <> @api_key, json: body, headers: headers) do
-        {:ok, %Req.Response{status: 200, body: %{"candidates" => [%{"content" => %{"parts" => [%{"text" => response}]}}]}}} ->
-          {:ok, response}
-  
-        {:ok, %Req.Response{status: status, body: body}} ->
-          {:error, "Request failed: #{status}, #{inspect(body)}"}
-  
-        {:error, reason} ->
-          {:error, "Request error: #{inspect(reason)}"}
-      end
+  @moduledoc """
+  Client for interacting with Google's Gemini API.
+  """
+
+  @api_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+
+  def generate_content(prompt) do
+    case System.get_env("GEMINI_API_KEY") do
+      nil ->
+        {:error, "Missing GEMINI_API_KEY environment variable"}
+
+      api_key ->
+        body = %{
+          "contents" => [%{"parts" => [%{"text" => prompt}]}]
+        }
+
+        headers = [{"Content-Type", "application/json"}]
+
+        case Req.post(@api_url <> "?key=" <> api_key, json: body, headers: headers) do
+          {:ok, %Req.Response{
+            status: 200,
+            body: %{"candidates" => [%{"content" => %{"parts" => [%{"text" => response}]}}]}
+          }} ->
+            {:ok, response}
+
+          {:ok, %Req.Response{status: status, body: body}} ->
+            {:error, "Request failed: #{status}, #{inspect(body)}"}
+
+          {:error, reason} ->
+            {:error, "Request error: #{inspect(reason)}"}
+        end
     end
   end
-  
+end
+
 === File: mix.exs ===
 
 defmodule CoinTalk.MixProject do
@@ -1247,19 +785,8 @@ defmodule CoinTalk.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      # TODO bump on release to {:phoenix_live_view, "~> 1.0.0"},
       {:phoenix_live_view, "~> 1.0.0-rc.1", override: true},
-      {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
-      {:heroicons,
-       github: "tailwindlabs/heroicons",
-       tag: "v2.1.1",
-       sparse: "optimized",
-       app: false,
-       compile: false,
-       depth: 1},
       {:swoosh, "~> 1.5"},
       {:finch, "~> 0.13"},
       {:telemetry_metrics, "~> 1.0"},
@@ -1268,9 +795,11 @@ defmodule CoinTalk.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:req, "~> 0.5.8"}
+      {:req, "~> 0.5.8"},
+      {:dotenv_parser, "~> 2.0"}
     ]
   end
+  
 
   # Aliases are shortcuts or tasks specific to the current project.
   # For example, to install project dependencies and perform other setup tasks, run:
@@ -1280,247 +809,29 @@ defmodule CoinTalk.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind coin_talk", "esbuild coin_talk"],
-      "assets.deploy": [
-        "tailwind coin_talk --minify",
-        "esbuild coin_talk --minify",
-        "phx.digest"
-      ]
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
+  
 end
 
-=== File: priv/gettext/en/LC_MESSAGES/errors.po ===
+=== File: priv/repo/migrations/20250210233227_create_chat_messages.exs ===
 
-## `msgid`s in this file come from POT (.pot) files.
-##
-## Do not add, change, or remove `msgid`s manually here as
-## they're tied to the ones in the corresponding POT file
-## (with the same domain).
-##
-## Use `mix gettext.extract --merge` or `mix gettext.merge`
-## to merge POT files into PO files.
-msgid ""
-msgstr ""
-"Language: en\n"
+defmodule CoinTalk.Repo.Migrations.CreateChatMessages do
+  use Ecto.Migration
 
-## From Ecto.Changeset.cast/4
-msgid "can't be blank"
-msgstr ""
+  def change do
+    create table(:chat_messages) do
+      add :sender, :string, null: false
+      add :content, :text, null: false
 
-## From Ecto.Changeset.unique_constraint/3
-msgid "has already been taken"
-msgstr ""
-
-## From Ecto.Changeset.put_change/3
-msgid "is invalid"
-msgstr ""
-
-## From Ecto.Changeset.validate_acceptance/3
-msgid "must be accepted"
-msgstr ""
-
-## From Ecto.Changeset.validate_format/3
-msgid "has invalid format"
-msgstr ""
-
-## From Ecto.Changeset.validate_subset/3
-msgid "has an invalid entry"
-msgstr ""
-
-## From Ecto.Changeset.validate_exclusion/3
-msgid "is reserved"
-msgstr ""
-
-## From Ecto.Changeset.validate_confirmation/3
-msgid "does not match confirmation"
-msgstr ""
-
-## From Ecto.Changeset.no_assoc_constraint/3
-msgid "is still associated with this entry"
-msgstr ""
-
-msgid "are still associated with this entry"
-msgstr ""
-
-## From Ecto.Changeset.validate_length/3
-msgid "should have %{count} item(s)"
-msgid_plural "should have %{count} item(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be %{count} character(s)"
-msgid_plural "should be %{count} character(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be %{count} byte(s)"
-msgid_plural "should be %{count} byte(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should have at least %{count} item(s)"
-msgid_plural "should have at least %{count} item(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at least %{count} character(s)"
-msgid_plural "should be at least %{count} character(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at least %{count} byte(s)"
-msgid_plural "should be at least %{count} byte(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should have at most %{count} item(s)"
-msgid_plural "should have at most %{count} item(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at most %{count} character(s)"
-msgid_plural "should be at most %{count} character(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at most %{count} byte(s)"
-msgid_plural "should be at most %{count} byte(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-## From Ecto.Changeset.validate_number/3
-msgid "must be less than %{number}"
-msgstr ""
-
-msgid "must be greater than %{number}"
-msgstr ""
-
-msgid "must be less than or equal to %{number}"
-msgstr ""
-
-msgid "must be greater than or equal to %{number}"
-msgstr ""
-
-msgid "must be equal to %{number}"
-msgstr ""
-
-=== File: priv/gettext/errors.pot ===
-
-## This is a PO Template file.
-##
-## `msgid`s here are often extracted from source code.
-## Add new translations manually only if they're dynamic
-## translations that can't be statically extracted.
-##
-## Run `mix gettext.extract` to bring this file up to
-## date. Leave `msgstr`s empty as changing them here has no
-## effect: edit them in PO (`.po`) files instead.
-## From Ecto.Changeset.cast/4
-msgid "can't be blank"
-msgstr ""
-
-## From Ecto.Changeset.unique_constraint/3
-msgid "has already been taken"
-msgstr ""
-
-## From Ecto.Changeset.put_change/3
-msgid "is invalid"
-msgstr ""
-
-## From Ecto.Changeset.validate_acceptance/3
-msgid "must be accepted"
-msgstr ""
-
-## From Ecto.Changeset.validate_format/3
-msgid "has invalid format"
-msgstr ""
-
-## From Ecto.Changeset.validate_subset/3
-msgid "has an invalid entry"
-msgstr ""
-
-## From Ecto.Changeset.validate_exclusion/3
-msgid "is reserved"
-msgstr ""
-
-## From Ecto.Changeset.validate_confirmation/3
-msgid "does not match confirmation"
-msgstr ""
-
-## From Ecto.Changeset.no_assoc_constraint/3
-msgid "is still associated with this entry"
-msgstr ""
-
-msgid "are still associated with this entry"
-msgstr ""
-
-## From Ecto.Changeset.validate_length/3
-msgid "should have %{count} item(s)"
-msgid_plural "should have %{count} item(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be %{count} character(s)"
-msgid_plural "should be %{count} character(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be %{count} byte(s)"
-msgid_plural "should be %{count} byte(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should have at least %{count} item(s)"
-msgid_plural "should have at least %{count} item(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at least %{count} character(s)"
-msgid_plural "should be at least %{count} character(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at least %{count} byte(s)"
-msgid_plural "should be at least %{count} byte(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should have at most %{count} item(s)"
-msgid_plural "should have at most %{count} item(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at most %{count} character(s)"
-msgid_plural "should be at most %{count} character(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "should be at most %{count} byte(s)"
-msgid_plural "should be at most %{count} byte(s)"
-msgstr[0] ""
-msgstr[1] ""
-
-## From Ecto.Changeset.validate_number/3
-msgid "must be less than %{number}"
-msgstr ""
-
-msgid "must be greater than %{number}"
-msgstr ""
-
-msgid "must be less than or equal to %{number}"
-msgstr ""
-
-msgid "must be greater than or equal to %{number}"
-msgstr ""
-
-msgid "must be equal to %{number}"
-msgstr ""
+      timestamps()
+    end
+  end
+end
 
 === File: priv/repo/seeds.exs ===
 
@@ -1535,11 +846,3 @@ msgstr ""
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-
-=== File: priv/static/robots.txt ===
-
-# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
-#
-# To ban all spiders from the entire site uncomment the next two lines:
-# User-agent: *
-# Disallow: /

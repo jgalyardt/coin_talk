@@ -22,9 +22,6 @@ config :coin_talk, CoinTalkWeb.Endpoint,
   pubsub_server: CoinTalk.PubSub,
   live_view: [signing_salt: "7YHp2+XW"]
 
-config :coin_talk, CoinTalk.ApiClient,
-  api_key: System.get_env("GEMINI_API_KEY") || raise("GEMINI_API_KEY is missing!")
-
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
@@ -33,28 +30,6 @@ config :coin_talk, CoinTalk.ApiClient,
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :coin_talk, CoinTalk.Mailer, adapter: Swoosh.Adapters.Local
-
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.17.11",
-  coin_talk: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
-
-# Configure tailwind (the version is required)
-config :tailwind,
-  version: "3.4.3",
-  coin_talk: [
-    args: ~w(
-      --config=tailwind.config.js
-      --input=css/app.css
-      --output=../priv/static/assets/app.css
-    ),
-    cd: Path.expand("../assets", __DIR__)
-  ]
 
 # Configures Elixir's Logger
 config :logger, :console,

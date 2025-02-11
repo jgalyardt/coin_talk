@@ -5,3 +5,59 @@ Users can chat too, and the bots will react based on the conversation.
 There need to be rate limits on everything to keep it completely free.
 Focus on the back-end API implementation.
 Give me the full output of any changed files.
+
+Help me with this error:
+
+$ mix phx.server
+[info] Running CoinTalkWeb.Endpoint with Bandit 1.6.7 at 127.0.0.1:4000 (http)
+[info] Access CoinTalkWeb.Endpoint at http://localhost:4000
+[info] GET /
+[debug] Processing with CoinTalkWeb.PageController.home/2
+  Parameters: %{}
+  Pipelines: [:browser]
+[info] Sent 500 in 62ms
+[error] ** (UndefinedFunctionError) function CoinTalkWeb.PageController.init/1 is undefined (module CoinTalkWeb.PageController is not available)
+    CoinTalkWeb.PageController.init(:home)
+    (phoenix 1.7.19) lib/phoenix/router.ex:484: Phoenix.Router.__call__/5
+    (coin_talk 0.1.0) lib/coin_talk_web/endpoint.ex:1: CoinTalkWeb.Endpoint.plug_builder_call/2
+    (coin_talk 0.1.0) deps/plug/lib/plug/debugger.ex:136: CoinTalkWeb.Endpoint."call (overridable 3)"/2
+    (coin_talk 0.1.0) lib/coin_talk_web/endpoint.ex:1: CoinTalkWeb.Endpoint.call/2
+    (phoenix 1.7.19) lib/phoenix/endpoint/sync_code_reload_plug.ex:22: Phoenix.Endpoint.SyncCodeReloadPlug.do_call/4
+    (bandit 1.6.7) lib/bandit/pipeline.ex:129: Bandit.Pipeline.call_plug!/2
+    (bandit 1.6.7) lib/bandit/pipeline.ex:40: Bandit.Pipeline.run/4
+    (bandit 1.6.7) lib/bandit/http1/handler.ex:12: Bandit.HTTP1.Handler.handle_data/3        
+    (bandit 1.6.7) lib/bandit/delegating_handler.ex:18: Bandit.DelegatingHandler.handle_data/3
+    (bandit 1.6.7) lib/bandit/delegating_handler.ex:8: Bandit.DelegatingHandler.handle_continue/2
+    (stdlib 6.2) gen_server.erl:2335: :gen_server.try_handle_continue/3
+    (stdlib 6.2) gen_server.erl:2244: :gen_server.loop/7
+    (stdlib 6.2) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+[error] Task #PID<0.654.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Tailwind.install_and_run/2 is undefined (module Tailwind is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Tailwind.install_and_run(:coin_talk, ["--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["tailwind", {Tailwind, :install_and_run, [:coin_talk, ["--watch"]]}]
+[error] Task #PID<0.653.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Esbuild.install_and_run/2 is undefined (module Esbuild is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Esbuild.install_and_run(:coin_talk, ["--sourcemap=inline", "--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["esbuild", {Esbuild, :install_and_run, [:coin_talk, ["--sourcemap=inline", "--watch"]]}]
+[error] Task #PID<0.661.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Tailwind.install_and_run/2 is undefined (module Tailwind is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Tailwind.install_and_run(:coin_talk, ["--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["tailwind", {Tailwind, :install_and_run, [:coin_talk, ["--watch"]]}]
+[error] Task #PID<0.662.0> started from CoinTalkWeb.Endpoint terminating
+** (UndefinedFunctionError) function Esbuild.install_and_run/2 is undefined (module Esbuild is not available). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    Esbuild.install_and_run(:coin_talk, ["--sourcemap=inline", "--watch"])
+    (phoenix 1.7.19) lib/phoenix/endpoint/watcher.ex:19: Phoenix.Endpoint.Watcher.watch/2    
+    (elixir 1.18.2) lib/task/supervised.ex:101: Task.Supervised.invoke_mfa/2
+Function: &Phoenix.Endpoint.Watcher.watch/2
+    Args: ["esbuild", {Esbuild, :install_and_run, [:coin_talk, ["--sourcemap=inline", "--watch"]]}]
+[info] Shutting down 1 sockets in 1 rounds of 2000ms

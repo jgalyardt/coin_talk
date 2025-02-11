@@ -14,8 +14,12 @@ defmodule CoinTalk.Application do
       {Phoenix.PubSub, name: CoinTalk.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: CoinTalk.Finch},
-      # Start a worker by calling: CoinTalk.Worker.start_link(arg)
-      # {CoinTalk.Worker, arg},
+      # Start the tracker for the last user message timestamp
+      CoinTalk.Chat.UserMessageTracker,
+      # Start the market data monitor (polling every 2 seconds)
+      CoinTalk.MarketData,
+      # Start the bot responder (checks every 5 seconds)
+      CoinTalk.BotResponder,
       # Start to serve requests, typically the last entry
       CoinTalkWeb.Endpoint
     ]

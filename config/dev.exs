@@ -24,10 +24,7 @@ config :coin_talk, CoinTalkWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "+HxSz38K9mA50hyZ6svjHVXnu8nK72oj/zKHuutPYFz0wyJ7BUgOJGrKKy2s7qRU",
-  watchers: [
-    esbuild: {Esbuild, :install_and_run, [:coin_talk, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:coin_talk, ~w(--watch)]}
-  ]
+  watchers: []
 
 # ## SSL Support
 #

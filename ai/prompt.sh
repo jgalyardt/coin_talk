@@ -25,38 +25,6 @@ Examples:
 EOF
 }
 
-# Built-in tree function to replace external tree command
-print_tree() {
-    local dir="${1:-.}"
-    local prefix="${2}"
-    local excluded="${3:-node_modules|_build|deps|.git|*.beam|*.ez|ai}"
-    
-    # Get all items in directory, excluding hidden files and excluded patterns
-    local items=($(ls -A "$dir" 2>/dev/null | grep -Ev "$excluded" | sort))
-    local total=${#items[@]}
-    
-    local i
-    for ((i=0; i<$total; i++)); do
-        local item="${items[$i]}"
-        local path="$dir/$item"
-        local is_last=$((i == total-1))
-        
-        # Print item with appropriate prefix
-        if [ $is_last -eq 1 ]; then
-            echo "${prefix}└── $item"
-            new_prefix="${prefix}    "
-        else
-            echo "${prefix}├── $item"
-            new_prefix="${prefix}│   "
-        fi
-        
-        # Recursively process directories
-        if [ -d "$path" ]; then
-            print_tree "$path" "$new_prefix" "$excluded"
-        fi
-    done
-}
-
 # Default values
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -W)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -W)"
@@ -110,18 +78,24 @@ cp "$CONTEXT_FILE" "$OUTPUT_FILE"
 should_process_path() {
     local path="$1"
     local rel_path="${path#$PROJECT_ROOT/}"
-    
-    # Only include mix.exs, lib/ and priv/ paths
+
+    # Exclude priv/static and gettext files
+    if [[ "$rel_path" == "priv/static"* ]] || [[ "$rel_path" == "priv/gettext"* ]]; then
+        return 1
+    fi
+
+    # Only include mix.exs, lib/ and priv/ (excluding priv/static and priv/gettext)
     if [[ "$rel_path" == "mix.exs" ]] || \
        [[ "$rel_path" == lib/* ]] || \
-       [[ "$rel_path" == priv/* ]]; then
+       [[ "$rel_path" == priv/* && "$rel_path" != priv/static* && "$rel_path" != priv/gettext* ]]; then
         return 0
     fi
     return 1
 }
+
 should_include_file() {
     local file="$1"
-    
+
     # Skip binary files, hidden files, and specific directories
     if [[ -d "$file" ]] || \
        [[ "$file" == *"node_modules"* ]] || \
@@ -135,22 +109,24 @@ should_include_file() {
        [[ "$file" == *".svg"* ]] || \
        [[ "$file" == *".lock"* ]] || \
        [[ "$file" == *".heex"* ]] || \
+       [[ "$file" == "priv/static"* ]] || \
+       [[ "$file" == "priv/gettext"* ]] || \
        [[ "$(basename "$file")" == .* ]]; then
         return 1
     fi
-    
+
     # Check file size (Windows Git Bash compatible)
     local size=$(stat --format=%s "$file" 2>/dev/null)
     if [ $? -eq 0 ] && [ "$size" -gt "$MAX_FILE_SIZE" ]; then
         echo "Skipping large file: $file ($size bytes)"
         return 1
     fi
-    
+
     # Check if file is binary
     if file "$file" | grep -q "binary"; then
         return 1
     fi
-    
+
     return 0
 }
 
@@ -158,7 +134,7 @@ should_include_file() {
 process_file() {
     local file="$1"
     local rel_path="${file#$PROJECT_ROOT/}"
-    
+
     if should_include_file "$file"; then
         echo -e "\n=== File: $rel_path ===\n" >> "$OUTPUT_FILE"
         cat "$file" >> "$OUTPUT_FILE"
@@ -172,24 +148,22 @@ print_progress() {
     printf "\rProcessing files: [%d/%d]" $current $total
 }
 
-
 # Get total number of files first (only from relevant paths)
-total_files=$(find "$PROJECT_ROOT" \( -name "mix.exs" -o -path "*/lib/*" -o -path "*/priv/*" \) -type f ! -path "*/deps/*" ! -path "*/_build/*" | wc -l)
+total_files=$(find "$PROJECT_ROOT" \( -name "mix.exs" -o -path "*/lib/*" -o -path "*/priv/*" \) -type f ! -path "*/deps/*" ! -path "*/_build/*" ! -path "*/priv/static/*" ! -path "*/priv/gettext/*" | wc -l)
 current_file=0
 
 # Walk through project directory with progress bar
 echo "Starting file processing from $(dirname "$PROJECT_ROOT")..."
-echo "Including: mix.exs, lib/, and priv/ directories"
+echo "Including: mix.exs, lib/, and priv/ (excluding priv/static and priv/gettext)"
 while IFS= read -r file; do
     if should_process_path "$file"; then
         ((current_file++))
         print_progress $current_file $total_files
         process_file "$file"
     fi
-done < <(find "$PROJECT_ROOT" \( -name "mix.exs" -o -path "*/lib/*" -o -path "*/priv/*" \) -type f ! -path "*/deps/*" ! -path "*/_build/*")
+done < <(find "$PROJECT_ROOT" \( -name "mix.exs" -o -path "*/lib/*" -o -path "*/priv/*" \) -type f ! -path "*/deps/*" ! -path "*/_build/*" ! -path "*/priv/static/*" ! -path "*/priv/gettext/*")
 
 # Clear the progress bar line and show completion
 printf "\rFile processing completed! Processed %d files.                        \n" $total_files
 
 echo "Prompt has been generated in $OUTPUT_FILE"
-

@@ -18,7 +18,8 @@ defmodule CoinTalkWeb.Router do
   scope "/", CoinTalkWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    # Changed from PageController :home to DefaultController :index
+    get "/", DefaultController, :index
   end
 
   # API endpoints for chart data and chat messages.
