@@ -5,16 +5,16 @@ import ChatBox from './components/ChatBox.vue'
 
 <template>
   <div id="app">
-    <MarketChart />
-    <ChatBox />
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <MarketChart />
+        </div>
+        <div class="col-md-4">
+          <ChatBox />
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
-
-<style scoped>
-#app {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  height: 100vh;
-}
-</style>
