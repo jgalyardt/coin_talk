@@ -12,6 +12,7 @@ defmodule CoinTalkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug CORSPlug, origin: ["http://localhost:5173"]
     plug CoinTalkWeb.Plugs.RateLimiter
   end
 

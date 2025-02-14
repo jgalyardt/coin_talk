@@ -38,16 +38,20 @@ defmodule CoinTalkWeb.Plugs.RateLimiter do
     |> Enum.join(".")
   end
 
-  defp ensure_table_exists do
-    table = :rate_limiter_table
+defp ensure_table_exists do
+  table = :rate_limiter_table
 
-    # Create the table if it does not already exist.
-    if :ets.whereis(table) == :undefined do
+  if :ets.whereis(table) == :undefined do
+    try do
       :ets.new(table, [:named_table, :public, read_concurrency: true])
+    rescue
+      ArgumentError -> :ok
     end
-
+  else
     :ok
   end
+end
+
 
   defp check_rate(ip, now) do
     table = :rate_limiter_table

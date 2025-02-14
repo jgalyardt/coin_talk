@@ -6,6 +6,7 @@ defmodule CoinTalk.Chat.Message do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :sender, :content, :inserted_at, :updated_at]}
   schema "chat_messages" do
     field :sender, :string
     field :content, :string
