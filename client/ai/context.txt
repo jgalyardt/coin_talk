@@ -1,0 +1,131 @@
+I am creating an Elixir Phoenix back-end for a Vue 3 front-end called coin_talk.
+The concept is one chart on the left: Bitcoin.
+To the right is a chat box. There are two chat bots, Al1c3 and B0b, which use Gemini's free tier to discuss what's going on in the markets.
+Users can chat too, and the bots will react based on the conversation.
+Help me construct the front end for this project, here is the API reference:
+
+Base URL
+cpp
+Copy
+http://localhost:4000
+Endpoints
+1. Default Welcome Endpoint
+URL: /
+Method: GET
+Description:
+Returns a welcome message with the current version of the application.
+Response Example:
+json
+Copy
+{
+  "message": "Welcome to Coin Talk",
+  "version": "1.0"
+}
+2. Bot Chat Logging Endpoint
+URL: /botchat
+Method: GET
+Description:
+Retrieves the last 50 chat messages and logs the full conversation to the server console.
+Note: This endpoint does not return the conversation in the response body but confirms that the conversation has been logged.
+Response Example (Plain Text):
+pgsql
+Copy
+Bot conversation has been logged to the console.
+3. Charts Endpoint
+URL: /api/charts
+Method: GET
+Description:
+Returns simulated (randomized) market data for Bitcoin and USD.
+The Bitcoin price is a randomized value between 30,000 and 60,000 USD, and the USD exchange rate is randomized between 0.8 and 1.2.
+Response Example:
+json
+Copy
+{
+  "bitcoin": {
+    "price": 45872.34
+  },
+  "usd": {
+    "exchange_rate": 1.04
+  }
+}
+4. Chat Messages Endpoints
+a. List Chat Messages
+URL: /api/chat
+Method: GET
+Description:
+Returns the most recent chat messages (default limit is 50 messages).
+Response Example:
+json
+Copy
+{
+  "messages": [
+    {
+      "id": 1,
+      "sender": "Alice",
+      "content": "hello everyone",
+      "inserted_at": "2025-02-14 15:30:45"
+    },
+    {
+      "id": 2,
+      "sender": "B0b",
+      "content": "hi there",
+      "inserted_at": "2025-02-14 15:31:10"
+    }
+    // ... more messages
+  ]
+}
+b. Create a New Chat Message
+URL: /api/chat
+Method: POST
+Description:
+Creates a new chat message.
+For non-bot senders, the message timestamp will also update the “last user message” tracker used for bot response scheduling.
+Request Headers:
+Content-Type: application/json
+Request Body Example:
+json
+Copy
+{
+  "sender": "Charlie",
+  "content": "what's the latest on bitcoin?"
+}
+Successful Response Example:
+json
+Copy
+{
+  "message": {
+    "id": 3,
+    "sender": "Charlie",
+    "content": "what's the latest on bitcoin?",
+    "inserted_at": "2025-02-14 15:32:00"
+  }
+}
+Error Response:
+If required fields are missing or invalid, the endpoint returns a 422 Unprocessable Entity with error details.
+json
+Copy
+{
+  "errors": {
+    "sender": "can't be blank",
+    "content": "can't be blank"
+  }
+}
+Rate Limiting
+Applies to: All endpoints under /api
+Limit: 60 requests per minute per IP address.
+Response on Exceeding Limit:
+The server will respond with a 429 Too Many Requests status and the message:
+bash
+Copy
+Rate limit exceeded
+Additional Notes
+Bot Responses:
+A separate process periodically (every 5 seconds) checks for chat inactivity. If no user message has been received, a bot (either "Al1c3" or "B0b") will automatically generate a one-sentence response that is logged as a new chat message.
+
+Market Data:
+The /api/charts endpoint simulates market data, while an internal process (MarketData) periodically polls real market data (subject to API limits).
+
+Logging:
+The /botchat endpoint is intended for debugging and logs the current conversation to the server’s console.
+
+
