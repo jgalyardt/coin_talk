@@ -6,20 +6,12 @@ defmodule CoinTalkWeb.Api.ChartController do
 
   @doc """
   Returns current market data for Bitcoin and USD.
-
-  (For demo purposes the prices are randomized.)
   """
   def index(conn, _params) do
-    data = %{
-      bitcoin: %{price: random_price(30000, 60000)},
-      usd: %{exchange_rate: random_price(0.8, 1.2)}
-    }
-
-    json(conn, data)
-  end
-
-  defp random_price(min, max) do
-    (:rand.uniform() * (max - min) + min)
-    |> Float.round(2)
+    market_context = CoinTalk.MarketData.get_context()
+    # Extract the price from the market_context string or
+    # update MarketData to expose raw data (e.g., market_data.price)
+    # and then construct your JSON response accordingly.
+    json(conn, %{market_data: market_context})
   end
 end

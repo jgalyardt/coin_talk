@@ -1,4 +1,10 @@
-Generate simple API docs for the endpoints in this project.
+I am creating an Elixir Phoenix back-end for a Vue 3 front-end called coin_talk.
+The concept is two charts on the left: Bitcoin and $USD.
+To the right is a chat box. There are two chat bots, Al1c3 and B0b, which use Gemini's free tier to discuss what's going on in the markets.
+Users can chat too, and the bots will react based on the conversation.
+
+My BTC price data seems to be coming in wrong, with numbers of 40-60k showing up on the front-end.
+Walk me through the best way to debug this. BTC's actual price is 97k right now.
 === File: lib/coin_talk/application.ex ===
 
 defmodule CoinTalk.Application do
@@ -159,6 +165,7 @@ defmodule CoinTalk.Chat.Message do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :sender, :content, :inserted_at, :updated_at]}
   schema "chat_messages" do
     field :sender, :string
     field :content, :string
@@ -647,16 +654,20 @@ defmodule CoinTalkWeb.Plugs.RateLimiter do
     |> Enum.join(".")
   end
 
-  defp ensure_table_exists do
-    table = :rate_limiter_table
+defp ensure_table_exists do
+  table = :rate_limiter_table
 
-    # Create the table if it does not already exist.
-    if :ets.whereis(table) == :undefined do
+  if :ets.whereis(table) == :undefined do
+    try do
       :ets.new(table, [:named_table, :public, read_concurrency: true])
+    rescue
+      ArgumentError -> :ok
     end
-
+  else
     :ok
   end
+end
+
 
   defp check_rate(ip, now) do
     table = :rate_limiter_table
@@ -699,6 +710,7 @@ defmodule CoinTalkWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug CORSPlug, origin: ["http://localhost:5173"]
     plug CoinTalkWeb.Plugs.RateLimiter
   end
 
@@ -1035,7 +1047,8 @@ defmodule CoinTalk.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:req, "~> 0.5.8"},
-      {:dotenv_parser, "~> 2.0"}
+      {:dotenv_parser, "~> 2.0"},
+      {:cors_plug, "~> 3.0"}
     ]
   end
 

@@ -81,7 +81,9 @@ defmodule CoinTalk.BotResponder do
         # Insert the bot response as a chat message and log it at the info level.
         case CoinTalk.Chat.create_message(%{sender: bot, content: response}) do
           {:ok, message} ->
-            Logger.info("[#{NaiveDateTime.to_string(message.inserted_at)}] #{message.sender}: #{message.content}")
+            Logger.info(
+              "[#{NaiveDateTime.to_string(message.inserted_at)}] #{message.sender}: #{message.content}"
+            )
 
           {:error, error} ->
             Logger.error("Failed to create bot message: #{inspect(error)}")
