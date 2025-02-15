@@ -1,4 +1,4 @@
-Help me restructure the UI to use bootstrap styles.
+Review my front-end implementation and align it with these changes.
 === File: src/App.vue ===
 
 <script setup>
@@ -7,26 +7,31 @@ import ChatBox from './components/ChatBox.vue'
 </script>
 
 <template>
-  <div id="app">
-    <div class="container">
-      <div class="row main-content">
-        <div class="col-md-8">
-          <MarketChart />
-        </div>
-        <div class="col-md-4">
-          <ChatBox />
+  <div id="app" class="container my-5">
+    <div class="row">
+      <!-- Left column (Chart) -->
+      <div class="col-md-8 mb-3">
+        <div class="card">
+          <div class="card-header">
+            Market Chart
+          </div>
+          <div class="card-body">
+            <MarketChart />
+          </div>
         </div>
       </div>
-    </div>
 
+      <!-- Right column (Chat) -->
+      <div class="col-md-4 mb-3">
+        <ChatBox />
+      </div>
+    </div>
   </div>
 </template>
 
-
 <style scoped>
-.main-content {
-  margin-top: 10vw;
-  min-height: 400px;
+.card-body {
+  height: 400px;
 }
 </style>
 
@@ -130,86 +135,97 @@ body {
 === File: src/components/ChatBox.vue ===
 
 <template>
-    <div class="chat-box">
-      <div class="messages" ref="messagesContainer">
-        <div
-          v-for="message in messages"
-          :key="message.id"
-          class="chat-message"
-        >
-          <div class="sender"><strong>{{ message.sender }}:</strong></div>
-          <div class="content">{{ message.content }}</div>
-          <div class="timestamp">{{ message.inserted_at }}</div>
-        </div>
+  <div class="card h-100 d-flex flex-column">
+    <div class="card-header">
+      Chat
+    </div>
+
+    <!-- Chat messages -->
+    <div class="card-body overflow-auto" ref="messagesContainer" style="flex: 1">
+      <div
+        v-for="message in messages"
+        :key="message.id"
+        class="mb-3"
+      >
+        <div class="fw-bold">{{ message.sender }}:</div>
+        <div>{{ message.content }}</div>
+        <div class="text-muted small">{{ message.inserted_at }}</div>
       </div>
-      <form @submit.prevent="sendMessage" class="chat-form">
+    </div>
+
+    <!-- Chat input form -->
+    <div class="card-footer">
+      <form @submit.prevent="sendMessage" class="d-flex">
         <input
           v-model="newMessage.content"
+          type="text"
+          class="form-control me-2"
           placeholder="Type your message..."
           required
         />
-        <button type="submit">Send</button>
+        <button type="submit" class="btn btn-primary">
+          Send
+        </button>
       </form>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, onMounted, nextTick } from 'vue'
-  
-  const messages = ref([])
-  const newMessage = ref({ sender: 'User', content: '' })
-  const messagesContainer = ref(null)
-  
-  async function fetchChatMessages() {
-    try {
-      const res = await fetch('http://localhost:4000/api/chat')
-      if (!res.ok) throw new Error('Failed to fetch chat messages')
-      const data = await res.json()
-      messages.value = data.messages
-  
-      // scroll to the bottom so that the latest messages are visible
-      await nextTick()
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    } catch (error) {
-      console.error(error)
-    }
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, nextTick } from 'vue'
+
+const messages = ref([])
+const newMessage = ref({ sender: 'User', content: '' })
+const messagesContainer = ref(null)
+
+async function fetchChatMessages() {
+  try {
+    const res = await fetch('http://localhost:4000/api/chat')
+    if (!res.ok) throw new Error('Failed to fetch chat messages')
+    const data = await res.json()
+    messages.value = data.messages
+
+    await nextTick()
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  } catch (error) {
+    console.error(error)
   }
-  
-  async function sendMessage() {
-    if (!newMessage.value.content.trim()) return
-    try {
-      const res = await fetch('http://localhost:4000/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMessage.value)
-      })
-      if (!res.ok) {
-        const errorData = await res.json()
-        console.error('Error sending message:', errorData.errors)
-        return
-      }
-      const data = await res.json()
-      // Append the new message to the list
-      messages.value.push(data.message)
-      newMessage.value.content = ''
-      await nextTick()
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    } catch (error) {
-      console.error(error)
+}
+
+async function sendMessage() {
+  if (!newMessage.value.content.trim()) return
+  try {
+    const res = await fetch('http://localhost:4000/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newMessage.value)
+    })
+    if (!res.ok) {
+      const errorData = await res.json()
+      console.error('Error sending message:', errorData.errors)
+      return
     }
+    const data = await res.json()
+    messages.value.push(data.message)
+    newMessage.value.content = ''
+    await nextTick()
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  } catch (error) {
+    console.error(error)
   }
-  
-  onMounted(() => {
-    // initial load
-    fetchChatMessages()
-    // poll for new messages every 5 seconds
-    setInterval(fetchChatMessages, 5000)
-  })
-  </script>
-  
-  <style scoped>
-  </style>
-  
+}
+
+onMounted(() => {
+  // initial load
+  fetchChatMessages()
+  // poll for new messages every 5 seconds
+  setInterval(fetchChatMessages, 5000)
+})
+</script>
+
+<style scoped>
+</style>
+
 === File: src/components/icons/IconCommunity.vue ===
 
 <template>
@@ -275,73 +291,73 @@ body {
 === File: src/components/MarketChart.vue ===
 
 <template>
-    <div class="market-chart">
-      <canvas ref="chartCanvas"></canvas>
-    </div>
-  </template>
-  
-  <script setup>
-  import { onMounted, ref } from 'vue'
-  import Chart from 'chart.js/auto'
-  
-  const chartCanvas = ref(null)
-  let chartInstance = null
-  const dataPoints = []  // store the latest bitcoin prices
-  
-  async function fetchMarketData() {
-    try {
-      const response = await fetch('http://localhost:4000/api/charts')
-      if (!response.ok) throw new Error('Failed to fetch market data')
-      const data = await response.json()
-      const price = data.bitcoin.price
-  
-      // add the new price point and limit history to the last 20 values
-      dataPoints.push(price)
-      if (dataPoints.length > 20) dataPoints.shift()
-  
-      // update the chart if it exists
-      if (chartInstance) {
-        chartInstance.data.labels = dataPoints.map((_, index) => index + 1)
-        chartInstance.data.datasets[0].data = dataPoints
-        chartInstance.update()
-      }
-    } catch (error) {
-      console.error(error)
+  <!-- We rely on the parent card’s size, so just keep this minimal. -->
+  <div class="market-chart h-100">
+    <canvas ref="chartCanvas"></canvas>
+  </div>
+</template>
+
+<script setup>
+import { onMounted, ref } from 'vue'
+import Chart from 'chart.js/auto'
+
+const chartCanvas = ref(null)
+let chartInstance = null
+const dataPoints = []
+
+async function fetchMarketData() {
+  try {
+    const response = await fetch('http://localhost:4000/api/charts')
+    if (!response.ok) throw new Error('Failed to fetch market data')
+    const data = await response.json()
+    const price = data.bitcoin.price
+
+    dataPoints.push(price)
+    if (dataPoints.length > 20) dataPoints.shift()
+
+    if (chartInstance) {
+      chartInstance.data.labels = dataPoints.map((_, index) => index + 1)
+      chartInstance.data.datasets[0].data = dataPoints
+      chartInstance.update()
     }
+  } catch (error) {
+    console.error(error)
   }
-  
-  onMounted(() => {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
+}
+
+onMounted(() => {
+  chartInstance = new Chart(chartCanvas.value, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
           label: 'Bitcoin Price (USD)',
           data: [],
           borderColor: 'rgba(75,192,192,1)',
           backgroundColor: 'rgba(75,192,192,0.1)',
           tension: 0.3,
           fill: true,
-        }],
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: false }
         },
-        responsive: true,
-        maintainAspectRatio: false,
-      }
-    })
-  
-    // fetch initial data and then update every 5 seconds
-    fetchMarketData()
-    setInterval(fetchMarketData, 5000)
+      ],
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: false },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    },
   })
-  </script>
-  
-  <style scoped>
-  </style>
-  
+
+  fetchMarketData()
+  setInterval(fetchMarketData, 5000)
+})
+</script>
+
+<style scoped>
+</style>
+
 === File: src/main.js ===
 
 import './assets/main.css'
