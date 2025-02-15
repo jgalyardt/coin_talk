@@ -22,9 +22,7 @@ end
 
 DotenvParser.load_file(".env")
 
-config :coin_talk, CoinTalk.BotResponder,
-  gemini_api_key:
-    System.get_env("GEMINI_API_KEY") || raise("Missing GEMINI_API_KEY environment variable"),
+config :coin_talk, CoinTalk.MarketData,
   coinmarketcap_api_key:
     System.get_env("COINMARKETCAP_API_KEY") ||
       raise("Missing COINMARKETCAP_API_KEY environment variable")
