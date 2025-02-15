@@ -1,5 +1,1 @@
-I have two issues I need to fix:
-1) Requests to api/chat need an Access-Control-Allow-Origin header
-2) There's an infinite loop in MarketChart causing "MarketChart.vue:46 RangeError: Maximum call stack size exceeded"
-
-Below are my project files.
+Let's adjust the chart scale to be +/- 100 from the latest price initially.
