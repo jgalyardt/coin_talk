@@ -1,7 +1,1 @@
-I am creating an Elixir Phoenix back-end for a Vue 3 front-end called coin_talk.
-The concept is two charts on the left: Bitcoin and $USD.
-To the right is a chat box. There are two chat bots, Al1c3 and B0b, which use Gemini's free tier to discuss what's going on in the markets.
-Users can chat too, and the bots will react based on the conversation.
-
-My BTC price data seems to be coming in wrong, with numbers of 40-60k showing up on the front-end.
-Walk me through the best way to debug this. BTC's actual price is 97k right now.
+Here's the server implementation, check on the CORS error.

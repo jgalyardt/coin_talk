@@ -19,6 +19,13 @@ defmodule CoinTalk.Chat do
   end
 
   @doc """
+  Returns the latest (most recent) chat message.
+  """
+  def get_last_message do
+    list_messages(1) |> List.first()
+  end
+
+  @doc """
   Creates a new chat message.
   """
   def create_message(attrs \\ %{}) do
@@ -39,9 +46,9 @@ defmodule CoinTalk.Chat do
           CoinTalk.Chat.UserMessageTracker.set_last_message_timestamp(
             System.system_time(:millisecond)
           )
+          # Trigger immediate bot responses
+          GenServer.cast(CoinTalk.BotResponder, {:human_message, message})
         end
-
-        # (Removed immediate bot triggering in favor of periodic BotResponder.)
         {:ok, message}
 
       error ->
