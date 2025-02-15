@@ -1,8 +1,5 @@
 <template>
   <div class="card h-100 d-flex flex-column">
-    <div class="card-header">
-      Chat
-    </div>
 
     <!-- Chat messages -->
     <div class="card-body overflow-auto" ref="messagesContainer" style="flex: 1">
@@ -88,4 +85,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+  .card-body {
+    max-height: 388px;
+  }
 </style>

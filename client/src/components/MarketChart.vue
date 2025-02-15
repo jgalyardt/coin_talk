@@ -27,25 +27,28 @@ async function fetchMarketData() {
     const response = await fetch('http://localhost:4000/api/charts')
     if (!response.ok) throw new Error('Failed to fetch market data')
     const data = await response.json()
-    
+
     // Extract current price and historical data
     const price = data.bitcoin.price
-    historicalData.value = data.bitcoin.historical
+    // Use a shallow copy to avoid reactivity issues:
+    historicalData.value = { ...data.bitcoin.historical }
 
-    // Update dataPoints for the chart
-    dataPoints.value.push(price)
-    if (dataPoints.value.length > 20) dataPoints.value.shift()
+    // Update dataPoints: create a new (plain) array instead of mutating the reactive array
+    const newDataPoints = [...dataPoints.value, price]
+    if (newDataPoints.length > 20) newDataPoints.shift()
+    dataPoints.value = newDataPoints
 
-    // Update chart if it exists
+    // Update chart using the plain array:
     if (chartInstance) {
-      chartInstance.data.labels = dataPoints.value.map((_, index) => index + 1)
-      chartInstance.data.datasets[0].data = dataPoints.value
+      chartInstance.data.labels = newDataPoints.map((_, index) => index + 1)
+      chartInstance.data.datasets[0].data = newDataPoints
       chartInstance.update()
     }
   } catch (error) {
     console.error(error)
   }
 }
+
 
 onMounted(() => {
   chartInstance = new Chart(chartCanvas.value, {
@@ -72,9 +75,9 @@ onMounted(() => {
     },
   })
 
-  // Fetch data immediately, then poll every 5 seconds.
+  // Fetch data immediately, then poll every minute.
   fetchMarketData()
-  setInterval(fetchMarketData, 5000)
+  setInterval(fetchMarketData, 60000)
 })
 </script>
 
