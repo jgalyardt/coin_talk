@@ -29,9 +29,13 @@ defmodule CoinTalkWeb.Router do
   scope "/api", CoinTalkWeb.Api, as: :api do
     pipe_through :api
 
+    # Catch-all OPTIONS route for preflight requests.
+    options "/*path", OptionsController, :options
+
     get "/charts", ChartController, :index
     resources "/chat", ChatController, only: [:index, :create]
   end
+
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:coin_talk, :dev_routes) do

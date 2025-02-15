@@ -1,4 +1,13 @@
-Here's the server implementation, check on the CORS error.
+Help me address this warning:
+
+Compiling 1 file (.ex)
+    warning: CoinTalkWeb.Api.CoinTalkWeb.OptionsController.init/1 is undefined (module CoinTalkWeb.Api.CoinTalkWeb.OptionsController is not available or is yet to be defined)
+    │
+ 33 │     options "/*path", CoinTalkWeb.OptionsController, :options
+    │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/coin_talk_web/router.ex:33: CoinTalkWeb.Router.__checks__/0
+
 === File: lib/coin_talk/application.ex ===
 
 defmodule CoinTalk.Application do
@@ -639,6 +648,17 @@ defmodule CoinTalkWeb.Api.ChatController do
   end
 end
 
+=== File: lib/coin_talk_web/controllers/api/options_controller.ex ===
+
+defmodule CoinTalkWeb.Api.OptionsController do
+  use CoinTalkWeb, :controller
+
+  def options(conn, _params) do
+    # Return a 204 No Content response.
+    send_resp(conn, 204, "")
+  end
+end
+
 === File: lib/coin_talk_web/controllers/bot_chat_controller.ex ===
 
 defmodule CoinTalkWeb.BotChatController do
@@ -770,6 +790,7 @@ defmodule CoinTalkWeb.Plugs.RateLimiter do
   """
 
   import Plug.Conn
+  require Logger
 
   # maximum requests allowed per interval
   @limit 60
@@ -778,21 +799,31 @@ defmodule CoinTalkWeb.Plugs.RateLimiter do
 
   def init(opts), do: opts
 
-  def call(conn, _opts) do
+def call(conn, _opts) do
+  Logger.debug("RateLimiter plug: received #{conn.method} request with headers: #{inspect(conn.req_headers)}")
+  
+  if conn.method == "OPTIONS" do
+    conn
+  else
     ensure_table_exists()
     ip = ip_to_string(conn.remote_ip)
     now = System.system_time(:millisecond)
+    Logger.debug("Checking rate for IP #{ip} at time #{now}")
 
     case check_rate(ip, now) do
       :ok ->
+        Logger.debug("Rate check OK for #{ip}")
         conn
 
       :error ->
+        Logger.debug("Rate limit exceeded for #{ip}")
         conn
         |> send_resp(429, "Rate limit exceeded")
         |> halt()
     end
   end
+end
+
 
   defp ip_to_string(remote_ip) when is_tuple(remote_ip) do
     remote_ip
@@ -854,8 +885,8 @@ defmodule CoinTalkWeb.Router do
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
     plug CORSPlug, origin: ["http://localhost:5173"]
+    plug :accepts, ["json"]
     plug CoinTalkWeb.Plugs.RateLimiter
   end
 
@@ -871,6 +902,9 @@ defmodule CoinTalkWeb.Router do
   # API endpoints for chart data and chat messages.
   scope "/api", CoinTalkWeb.Api, as: :api do
     pipe_through :api
+
+    # Catch-all OPTIONS route for preflight requests.
+    options "/*path", CoinTalkWeb.OptionsController, :options
 
     get "/charts", ChartController, :index
     resources "/chat", ChatController, only: [:index, :create]

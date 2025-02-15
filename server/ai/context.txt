@@ -1,1 +1,9 @@
-Here's the server implementation, check on the CORS error.
+Help me address this warning:
+
+Compiling 1 file (.ex)
+    warning: CoinTalkWeb.Api.CoinTalkWeb.OptionsController.init/1 is undefined (module CoinTalkWeb.Api.CoinTalkWeb.OptionsController is not available or is yet to be defined)
+    │
+ 33 │     options "/*path", CoinTalkWeb.OptionsController, :options
+    │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/coin_talk_web/router.ex:33: CoinTalkWeb.Router.__checks__/0

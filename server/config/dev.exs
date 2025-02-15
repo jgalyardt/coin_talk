@@ -1,7 +1,7 @@
 import Config
 
 # Logger config
-config :logger, level: :info
+config :logger, level: :debug
 
 # Configure your database
 config :coin_talk, CoinTalk.Repo,
