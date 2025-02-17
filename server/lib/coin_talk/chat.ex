@@ -44,6 +44,19 @@ defmodule CoinTalk.Chat do
   end
 
   @doc """
+  Deletes all 'is typing...' messages .
+  """
+  def clear_stale_typing_messages do
+  cutoff = NaiveDateTime.add(NaiveDateTime.utc_now(), -10, :second)
+  
+  from(m in Message,
+    where: like(m.content, "%is typing...") and m.inserted_at < ^cutoff
+  )
+  |> Repo.delete_all()
+end
+
+
+  @doc """
   Handles a user–submitted message. If the sender is not a bot,
   the last user message timestamp is updated.
   """

@@ -114,8 +114,11 @@ defmodule CoinTalk.BotResponder do
   # Helper: if a bot is eligible, generate a response and update state.
   defp maybe_respond(nil, _last_chat, state, _opts) do
     Logger.debug("No eligible bot found for response at this time.")
+    # Remove any stale "is typing..." messages.
+    CoinTalk.Chat.clear_stale_typing_messages()
     state
   end
+
 
   defp maybe_respond(bot, last_chat, state, opts) do
     now = System.system_time(:millisecond)
