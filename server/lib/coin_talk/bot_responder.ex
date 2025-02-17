@@ -5,8 +5,8 @@ defmodule CoinTalk.BotResponder do
   - **Passive mode (no humans):**  
     Each bot speaks at most once per hour and bots alternate turns.
 
-  - **Active mode (human connected but no new human message):**  
-    Bots reply roughly every 20–30 seconds.
+  - **Active mode (human connected):**  
+    Bots reply roughly every 20–30 seconds even to each other.
 
   - **Immediate human reply:**  
     When a human sends a message, all bots immediately respond.
@@ -16,24 +16,22 @@ defmodule CoinTalk.BotResponder do
   use GenServer
   require Logger
 
-  @bots ["🤖 Al1c3", "🤖 B0b"]
-
   # Intervals in milliseconds
-  # 1 hour per bot in passive mode
-  @passive_interval 3_600_000
-  # roughly every 25 seconds in active mode
-  @active_interval 25_000
-  # default periodic check
-  @check_interval 5_000
+  @passive_interval 3_600_000     # 1 hour per bot in passive mode
+  @active_interval 25_000         # roughly every 25 seconds in active mode
+  @check_interval 5_000           # default periodic check
 
   # Public API
 
   def start_link(_args) do
-    # Initial state:
-    # - last_bot: the name of the bot that last sent a message (or nil)
-    # - bot_timestamps: map tracking when each bot last responded
-    # - mode: either :passive or :active
-    state = %{last_bot: nil, bot_timestamps: %{"Al1c3" => 0, "B0b" => 0}, mode: :passive}
+    # Initialize state with a bots list (now stored in state)
+    state = %{
+      bots: ["🤖 Al1c3", "🤖 B0b"],
+      last_bot: nil,
+      bot_timestamps: %{"🤖 Al1c3" => 0, "🤖 B0b" => 0},
+      mode: :passive,
+      last_human_message_ts: 0
+    }
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
@@ -47,59 +45,66 @@ defmodule CoinTalk.BotResponder do
   @impl true
   def handle_cast({:human_message, human_msg}, state) do
     Logger.info("Received human message, triggering immediate bot responses.")
-
-    Enum.each(@bots, fn bot ->
+    new_state = %{state | mode: :active, last_human_message_ts: System.system_time(:millisecond)}
+    Enum.each(state.bots, fn bot ->
       generate_bot_response(bot, human_msg, context_minutes: 2, force: true)
     end)
-
-    {:noreply, %{state | mode: :active}}
+    {:noreply, new_state}
   end
 
-  # Periodic check to decide if a bot should respond
+  # Handle a cast to reset the conversation with new bots.
+  @impl true
+  def handle_cast({:reset, new_bots}, state) do
+    Logger.info("Resetting bot responder with new bots: #{inspect(new_bots)}")
+    new_bot_timestamps = Enum.reduce(new_bots, %{}, fn bot, acc -> Map.put(acc, bot, 0) end)
+    {:noreply, %{state | bots: new_bots, bot_timestamps: new_bot_timestamps, last_bot: nil}}
+  end
+
+  # Periodic check to decide if a bot should respond.
   @impl true
   def handle_info(:check, state) do
-    # Determine current mode. (For example, you could check Phoenix Presence here.)
-    mode = determine_mode()
-    state = %{state | mode: mode}
+    now = System.system_time(:millisecond)
+    # If a human message was received within the last 5 seconds, skip periodic responses.
+    if now - state.last_human_message_ts < 5_000 do
+      Logger.debug("Recent human message detected, skipping periodic bot response")
+      schedule_check(@check_interval)
+      {:noreply, state}
+    else
+      mode = determine_mode()
+      state = %{state | mode: mode}
+      last_chat = CoinTalk.Chat.get_last_message()
 
-    # Get the most recent message; if none, returns nil.
-    last_chat = CoinTalk.Chat.get_last_message()
+      cond do
+        # In passive mode, let bots alternate by not replying if a bot was the last speaker.
+        mode == :passive and last_chat && last_chat.sender in state.bots ->
+          Logger.debug("Passive mode: last message by #{last_chat.sender}; waiting for a new speaker.")
+          :noop
 
-    cond do
-      # If the most recent message was from a bot, don’t have that same bot reply immediately.
-      last_chat && last_chat.sender in @bots ->
-        Logger.debug("Last message by #{last_chat.sender}; waiting for a new speaker.")
-        :noop
+        mode == :active ->
+          bot = choose_next_bot(state.last_bot, state.bot_timestamps, @active_interval, state.bots)
+          state = maybe_respond(bot, last_chat, state, context_minutes: 2)
+          state
 
-      mode == :active ->
-        # In active mode, if the last message is not from a bot (or is nil),
-        # let the bot that did not speak last reply if its active cooldown has passed.
-        bot = choose_next_bot(state.last_bot, state.bot_timestamps, @active_interval)
-        state = maybe_respond(bot, last_chat, state, context_minutes: 2)
-        state
+        mode == :passive ->
+          bot = choose_next_bot(state.last_bot, state.bot_timestamps, @passive_interval, state.bots)
+          state = maybe_respond(bot, last_chat, state, context_minutes: 24)
+          state
+      end
 
-      mode == :passive ->
-        # In passive mode, have bots reply at most once per hour, alternating speakers,
-        # and use a larger context window (last 24 hours)
-        bot = choose_next_bot(state.last_bot, state.bot_timestamps, @passive_interval)
-        state = maybe_respond(bot, last_chat, state, context_minutes: 24)
-        state
+      schedule_check(@check_interval)
+      {:noreply, state}
     end
-
-    schedule_check(@check_interval)
-    {:noreply, state}
   end
 
-  # Helper: schedule the next periodic check
+  # Helper: schedule the next periodic check.
   defp schedule_check(interval) do
     Process.send_after(self(), :check, interval)
   end
 
-  # Helper: choose the next bot that did not send the last message and whose cooldown has expired.
-  defp choose_next_bot(last_bot, bot_timestamps, interval) do
+  # Helper: choose the next bot (from the given bots list) that did not send the last message and whose cooldown has expired.
+  defp choose_next_bot(last_bot, bot_timestamps, interval, bots) do
     now = System.system_time(:millisecond)
-
-    @bots
+    bots
     |> Enum.reject(fn bot -> bot == last_bot end)
     |> Enum.find(fn bot ->
       now - Map.get(bot_timestamps, bot, 0) >= interval
@@ -115,92 +120,94 @@ defmodule CoinTalk.BotResponder do
   defp maybe_respond(bot, last_chat, state, opts) do
     now = System.system_time(:millisecond)
 
-    # Safety check: if the last message was from this bot, skip.
     if last_chat && last_chat.sender == bot do
       Logger.debug("#{bot} was the last to speak. Skipping its response.")
       state
     else
       generate_bot_response(bot, last_chat, opts)
-      # Update bot’s cooldown timestamp and record it as the last bot who spoke.
       new_timestamps = Map.put(state.bot_timestamps, bot, now)
       %{state | bot_timestamps: new_timestamps, last_bot: bot}
     end
   end
 
   # Determine the current mode.
-  # (For demonstration, we use the timestamp of the last human message.
-  # In a real app, you might track connected users via Phoenix.Presence.)
   defp determine_mode do
     last_user_ts = CoinTalk.Chat.UserMessageTracker.get_last_message_timestamp()
     now = System.system_time(:millisecond)
-    # If a human message was received in the last minute, assume active.
     if now - last_user_ts < 60_000, do: :active, else: :passive
   end
 
-  # Helper: Generate a bot response.
+  # Generate a bot response.
   # - `opts` expects a keyword list with:
   #   - `:context_minutes` – how many minutes of chat history to include.
   #   - `:force` – when true, ignore cooldown checks (used for immediate human replies).
-defp generate_bot_response(bot, last_chat, opts) do
-  market_context = CoinTalk.MarketData.get_context()
-  context_minutes = Keyword.get(opts, :context_minutes, 2)
-  chat_history = CoinTalk.Chat.list_recent_chats(context_minutes)
-  chat_history_str = format_chat_history(chat_history)
+  defp generate_bot_response(bot, last_chat, opts) do
+    market_context = CoinTalk.MarketData.get_context()
+    context_minutes = Keyword.get(opts, :context_minutes, 2)
+    chat_history = CoinTalk.Chat.list_recent_chats(context_minutes)
+    chat_history_str = format_chat_history(chat_history)
 
-  anchor =
-    case last_chat do
-      nil ->
-        "no previous message"
-      %_{inserted_at: inserted_at, sender: sender, content: content} ->
-        "[#{NaiveDateTime.to_string(inserted_at)}] #{sender}: #{content}"
-    end
+    anchor =
+      case last_chat do
+        nil ->
+          "no previous message"
+        %_{inserted_at: inserted_at, sender: sender, content: content} ->
+          "[#{NaiveDateTime.to_string(inserted_at)}] #{sender}: #{content}"
+      end
 
-  prompt = """
-  you are a chatbot in an internet chat room
-  be friendly and humorous while commenting on market trends
-  address the most recent message: "#{anchor}"
-  chat history (last #{context_minutes} minutes):
-  #{chat_history_str}
-  market context:
-  #{market_context}
-  responses must be one sentence max all lowercase with no punctuation
-  """
+    # Use a randomized prompt to vary tone and content.
+    prompt = randomized_prompt(bot, anchor, chat_history_str, context_minutes, market_context)
 
-  # Spawn a task per bot response.
-  Task.start(fn ->
-    # Random delay before showing typing indicator (to stagger if multiple bots are triggered)
-    initial_delay = :rand.uniform(1000)
-    :timer.sleep(initial_delay)
+    # Spawn a Task so the GenServer remains responsive.
+    Task.start(fn ->
+      # Stagger initial response to avoid simultaneous typing.
+      initial_delay = :rand.uniform(1000)
+      :timer.sleep(initial_delay)
+      # Create a temporary typing message.
+      case CoinTalk.Chat.create_message(%{sender: bot, content: "#{bot} is typing..."}) do
+        {:ok, _typing_message} ->
+          # Simulate typing delay.
+          delay = :rand.uniform(2000) + 1000
+          :timer.sleep(delay)
+          case CoinTalk.GeminiClient.generate_content(prompt) do
+            {:ok, response} ->
+              # Instead of updating the typing message, create a new message.
+              case CoinTalk.Chat.create_message(%{sender: bot, content: response}) do
+                {:ok, message} ->
+                  Logger.info("[#{NaiveDateTime.to_string(message.inserted_at)}] #{bot}: #{response}")
+                {:error, error} ->
+                  Logger.error("Failed to create bot response: #{inspect(error)}")
+              end
+            {:error, reason} ->
+              Logger.error("Gemini error: #{reason}")
+              _ = CoinTalk.Chat.create_message(%{sender: bot, content: "error: #{reason}"})
+          end
+        {:error, error} ->
+          Logger.error("Failed to create typing message for #{bot}: #{inspect(error)}")
+      end
+    end)
+  end
 
-    # Insert the typing indicator.
-    case CoinTalk.Chat.create_message(%{sender: bot, content: "#{bot} is typing..."}) do
-      {:ok, typing_message} ->
-        # Random delay (1 to 3 seconds) to simulate "typing..."
-        delay = :rand.uniform(2000) + 1000
-        :timer.sleep(delay)
-
-        # Now, fetch the actual bot response from Gemini.
-        case CoinTalk.GeminiClient.generate_content(prompt) do
-          {:ok, response} ->
-            # Update the "typing" message with the final response.
-            case CoinTalk.Chat.update_message(typing_message, %{content: response}) do
-              {:ok, message} ->
-                Logger.info("[#{NaiveDateTime.to_string(message.inserted_at)}] #{bot}: #{response}")
-              {:error, error} ->
-                Logger.error("Failed to update bot message: #{inspect(error)}")
-            end
-
-          {:error, reason} ->
-            Logger.error("Gemini error: #{reason}")
-            _ = CoinTalk.Chat.update_message(typing_message, %{content: "error: #{reason}"})
-        end
-
-      {:error, error} ->
-        Logger.error("Failed to create typing message for #{bot}: #{inspect(error)}")
-    end
-  end)
-end
-
+  # Returns a randomized prompt to vary tone and content.
+  defp randomized_prompt(_bot, anchor, chat_history_str, context_minutes, market_context) do
+    prompts = [
+      # Friendly and concise
+      "you are a friendly chatbot in a busy market chat. comment on bitcoin and usd using the last message \"#{anchor}\" with chat history (last #{context_minutes} minutes):\n#{chat_history_str}\nmarket update:\n#{market_context}\nrespond in one short sentence in lowercase without punctuation",
+      # Witty and succinct
+      "act as a witty market analyst. with humor and brevity, comment on the message \"#{anchor}\" and the following conversation:\n#{chat_history_str}\nmarket details:\n#{market_context}\nrespond in one sentence all lowercase no punctuation",
+      # Sarcastic tone
+      "you are a sarcastic crypto commentator. review the recent chat \"#{anchor}\" with context:\n#{chat_history_str}\nmarket info:\n#{market_context}\nanswer in a brief sarcastic remark in lowercase without punctuation",
+      # Optimistic crypto enthusiast
+      "imagine you are an upbeat crypto enthusiast discussing bitcoin and usd. using the last message \"#{anchor}\", the chat history:\n#{chat_history_str}\nand market update:\n#{market_context}\ngive a short, optimistic comment in one sentence all lowercase without punctuation",
+      # Down-to-earth trader
+      "you are a seasoned trader with a no-nonsense style. analyze the message \"#{anchor}\" and recent chat:\n#{chat_history_str}\nmarket context:\n#{market_context}\nrespond in one brief, factual sentence in lowercase without punctuation",
+      # Casual banter style
+      "you're just chatting about the market with your pals. comment on \"#{anchor}\" using the chat history (last #{context_minutes} minutes):\n#{chat_history_str}\nand current market details:\n#{market_context}\nreply in one casual sentence all lowercase without punctuation",
+      # Analytical perspective
+      "assume the role of an analytical market bot. consider the message \"#{anchor}\", the conversation:\n#{chat_history_str}\nand market update:\n#{market_context}\nprovide a concise analytical remark in one sentence in lowercase without punctuation"
+    ]
+    Enum.random(prompts)
+  end
 
   defp format_chat_history(chat_messages) do
     chat_messages

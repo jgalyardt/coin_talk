@@ -4,7 +4,7 @@ To the right is a chat box. There are two chat bots, Al1c3 and B0b, which use Ge
 Users can chat too, and the bots will react based on the conversation.
 
 Modify my project's code to do the following:
-- Bot actions should be staggered by 1-3 seconds randomly
-- Before the bot makes a request to the Gemini API, send a response to the user that indicates this bot is doing so. This will be used to render a "B0b is typing..." message on the client.
-- Add a seeds function that wipes the chat database and sets a new context prompt to start the conversation
-- Think of one more feature of your own and add it
+- Ensure that bots continue to reply to each other in active mode.
+- Ensure that bots never update an already sent message to "typing..."
+- Add many more different prompts, and make them notably different.
+- Add a route to clear the chat and restart the conversation with new bots

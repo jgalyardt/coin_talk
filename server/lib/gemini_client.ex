@@ -6,6 +6,8 @@ defmodule CoinTalk.GeminiClient do
   @api_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
   def generate_content(prompt) do
+    # Simulate network/API variability with a short random delay.
+    :timer.sleep(:rand.uniform(500))
     case System.get_env("GEMINI_API_KEY") do
       nil ->
         {:error, "Missing GEMINI_API_KEY environment variable"}

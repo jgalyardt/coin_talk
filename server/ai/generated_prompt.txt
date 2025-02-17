@@ -4,10 +4,10 @@ To the right is a chat box. There are two chat bots, Al1c3 and B0b, which use Ge
 Users can chat too, and the bots will react based on the conversation.
 
 Modify my project's code to do the following:
-- Bot actions should be staggered by 1-3 seconds randomly
-- Before the bot makes a request to the Gemini API, send a response to the user that indicates this bot is doing so. This will be used to render a "B0b is typing..." message on the client.
-- Add a seeds function that wipes the chat database and sets a new context prompt to start the conversation
-- Think of one more feature of your own and add it
+- Ensure that bots continue to reply to each other in active mode.
+- Ensure that bots never update an already sent message to "typing..."
+- Add many more different prompts, and make them notably different.
+- Add a route to clear the chat and restart the conversation with new bots
 
 === File: lib/coin_talk/application.ex ===
 
@@ -57,22 +57,22 @@ end
 defmodule CoinTalk.BotResponder do
   @moduledoc """
   Triggers chatbot responses with dynamic behavior:
-  
+
   - **Passive mode (no humans):**  
     Each bot speaks at most once per hour and bots alternate turns.
-  
+
   - **Active mode (human connected but no new human message):**  
     Bots reply roughly every 20–30 seconds.
-  
+
   - **Immediate human reply:**  
     When a human sends a message, all bots immediately respond.
-  
+
   Bots never reply to a message that they themselves sent.
   """
   use GenServer
   require Logger
 
-  @bots ["Al1c3", "B0b"]
+  @bots ["🤖 Al1c3", "🤖 B0b"]
 
   # Intervals in milliseconds
   @passive_interval 3_600_000     # 1 hour per bot in passive mode
@@ -82,11 +82,13 @@ defmodule CoinTalk.BotResponder do
   # Public API
 
   def start_link(_args) do
-    # Initial state:
-    # - last_bot: the name of the bot that last sent a message (or nil)
-    # - bot_timestamps: map tracking when each bot last responded
-    # - mode: either :passive or :active
-    state = %{last_bot: nil, bot_timestamps: %{"Al1c3" => 0, "B0b" => 0}, mode: :passive}
+    # Add last_human_message_ts to state to help deduplicate immediate responses.
+    state = %{
+      last_bot: nil,
+      bot_timestamps: %{"Al1c3" => 0, "B0b" => 0},
+      mode: :passive,
+      last_human_message_ts: 0
+    }
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
@@ -100,48 +102,49 @@ defmodule CoinTalk.BotResponder do
   @impl true
   def handle_cast({:human_message, human_msg}, state) do
     Logger.info("Received human message, triggering immediate bot responses.")
+    new_state = %{state | mode: :active, last_human_message_ts: System.system_time(:millisecond)}
     Enum.each(@bots, fn bot ->
       generate_bot_response(bot, human_msg, context_minutes: 2, force: true)
     end)
-    {:noreply, %{state | mode: :active}}
+    {:noreply, new_state}
   end
 
-  # Periodic check to decide if a bot should respond
+  # Periodic check to decide if a bot should respond.
   @impl true
   def handle_info(:check, state) do
-    # Determine current mode. (For example, you could check Phoenix Presence here.)
-    mode = determine_mode()
-    state = %{state | mode: mode}
+    now = System.system_time(:millisecond)
+    # If a human message was received within the last 5 seconds, skip periodic responses.
+    if now - state.last_human_message_ts < 5_000 do
+      Logger.debug("Recent human message detected, skipping periodic bot response")
+      schedule_check(@check_interval)
+      {:noreply, state}
+    else
+      mode = determine_mode()
+      state = %{state | mode: mode}
+      last_chat = CoinTalk.Chat.get_last_message()
 
-    # Get the most recent message; if none, returns nil.
-    last_chat = CoinTalk.Chat.get_last_message()
+      cond do
+        last_chat && last_chat.sender in @bots ->
+          Logger.debug("Last message by #{last_chat.sender}; waiting for a new speaker.")
+          :noop
 
-    cond do
-      # If the most recent message was from a bot, don’t have that same bot reply immediately.
-      last_chat && last_chat.sender in @bots ->
-        Logger.debug("Last message by #{last_chat.sender}; waiting for a new speaker.")
-        :noop
+        mode == :active ->
+          bot = choose_next_bot(state.last_bot, state.bot_timestamps, @active_interval)
+          state = maybe_respond(bot, last_chat, state, context_minutes: 2)
+          state
 
-      mode == :active ->
-        # In active mode, if the last message is not from a bot (or is nil),
-        # let the bot that did not speak last reply if its active cooldown has passed.
-        bot = choose_next_bot(state.last_bot, state.bot_timestamps, @active_interval)
-        state = maybe_respond(bot, last_chat, state, context_minutes: 2)
-        state
+        mode == :passive ->
+          bot = choose_next_bot(state.last_bot, state.bot_timestamps, @passive_interval)
+          state = maybe_respond(bot, last_chat, state, context_minutes: 24)
+          state
+      end
 
-      mode == :passive ->
-        # In passive mode, have bots reply at most once per hour, alternating speakers,
-        # and use a larger context window (last 24 hours)
-        bot = choose_next_bot(state.last_bot, state.bot_timestamps, @passive_interval)
-        state = maybe_respond(bot, last_chat, state, context_minutes: 24)
-        state
+      schedule_check(@check_interval)
+      {:noreply, state}
     end
-
-    schedule_check(@check_interval)
-    {:noreply, state}
   end
 
-  # Helper: schedule the next periodic check
+  # Helper: schedule the next periodic check.
   defp schedule_check(interval) do
     Process.send_after(self(), :check, interval)
   end
@@ -165,73 +168,80 @@ defmodule CoinTalk.BotResponder do
   defp maybe_respond(bot, last_chat, state, opts) do
     now = System.system_time(:millisecond)
 
-    # Safety check: if the last message was from this bot, skip.
     if last_chat && last_chat.sender == bot do
       Logger.debug("#{bot} was the last to speak. Skipping its response.")
       state
     else
       generate_bot_response(bot, last_chat, opts)
-      # Update bot’s cooldown timestamp and record it as the last bot who spoke.
       new_timestamps = Map.put(state.bot_timestamps, bot, now)
       %{state | bot_timestamps: new_timestamps, last_bot: bot}
     end
   end
 
   # Determine the current mode.
-  # (For demonstration, we use the timestamp of the last human message.
-  # In a real app, you might track connected users via Phoenix.Presence.)
   defp determine_mode do
     last_user_ts = CoinTalk.Chat.UserMessageTracker.get_last_message_timestamp()
     now = System.system_time(:millisecond)
-    # If a human message was received in the last minute, assume active.
     if now - last_user_ts < 60_000, do: :active, else: :passive
   end
 
-  # Helper: Generate a bot response.
+  # Generate a bot response.
   # - `opts` expects a keyword list with:
   #   - `:context_minutes` – how many minutes of chat history to include.
   #   - `:force` – when true, ignore cooldown checks (used for immediate human replies).
   defp generate_bot_response(bot, last_chat, opts) do
-    # Fetch market context as before.
     market_context = CoinTalk.MarketData.get_context()
-    # Use the desired context window (in minutes) for chat history.
     context_minutes = Keyword.get(opts, :context_minutes, 2)
     chat_history = CoinTalk.Chat.list_recent_chats(context_minutes)
     chat_history_str = format_chat_history(chat_history)
 
-    # Use the last message as conversational anchor (or a default string).
     anchor =
       case last_chat do
         nil ->
           "no previous message"
-
         %_{inserted_at: inserted_at, sender: sender, content: content} ->
           "[#{NaiveDateTime.to_string(inserted_at)}] #{sender}: #{content}"
       end
 
-    prompt = """
-    you are a chatbot in an internet chat room
-    be friendly and humorous while commenting on market trends
-    address the most recent message: "#{anchor}"
-    chat history (last #{context_minutes} minutes):
-    #{chat_history_str}
-    market context:
-    #{market_context}
-    responses must be one sentence max all lowercase with no punctuation
-    """
+    # Use a randomized prompt to vary tone and content.
+    prompt = randomized_prompt(bot, anchor, chat_history_str, context_minutes, market_context)
 
-    case CoinTalk.GeminiClient.generate_content(prompt) do
-      {:ok, response} ->
-        case CoinTalk.Chat.create_message(%{sender: bot, content: response}) do
-          {:ok, message} ->
-            Logger.info("[#{NaiveDateTime.to_string(message.inserted_at)}] #{bot}: #{response}")
-          {:error, error} ->
-            Logger.error("Failed to create bot message: #{inspect(error)}")
-        end
+    # Spawn a Task so the GenServer remains responsive.
+    Task.start(fn ->
+      # Stagger initial response to avoid simultaneous typing.
+      initial_delay = :rand.uniform(1000)
+      :timer.sleep(initial_delay)
+      case CoinTalk.Chat.create_message(%{sender: bot, content: "#{bot} is typing..."}) do
+        {:ok, typing_message} ->
+          # Simulate typing delay.
+          delay = :rand.uniform(2000) + 1000
+          :timer.sleep(delay)
+          case CoinTalk.GeminiClient.generate_content(prompt) do
+            {:ok, response} ->
+              case CoinTalk.Chat.update_message(typing_message, %{content: response}) do
+                {:ok, message} ->
+                  Logger.info("[#{NaiveDateTime.to_string(message.inserted_at)}] #{bot}: #{response}")
+                {:error, error} ->
+                  Logger.error("Failed to update bot message: #{inspect(error)}")
+              end
+            {:error, reason} ->
+              Logger.error("Gemini error: #{reason}")
+              _ = CoinTalk.Chat.update_message(typing_message, %{content: "error: #{reason}"})
+          end
+        {:error, error} ->
+          Logger.error("Failed to create typing message for #{bot}: #{inspect(error)}")
+      end
+    end)
+  end
 
-      {:error, reason} ->
-        Logger.error("BotResponder error: #{reason}")
-    end
+  # Returns a randomized prompt to vary tone and content.
+  defp randomized_prompt(_bot, anchor, chat_history_str, context_minutes, market_context) do
+    prompts = [
+      "you are a chatbot in an internet chat room. be friendly and humorous while commenting on market trends. address the most recent message: \"#{anchor}\". chat history (last #{context_minutes} minutes):\n#{chat_history_str}\nmarket context:\n#{market_context}\nresponses must be one sentence max all lowercase with no punctuation",
+      "you are a witty and insightful chat bot discussing bitcoin and usd. focus on the latest message: \"#{anchor}\" and the following conversation:\n#{chat_history_str}\nmarket context:\n#{market_context}\nkeep your response under two sentences all lowercase with no punctuation",
+      "you are a market savvy chatbot. with a friendly tone, comment on bitcoin and usd based on the last message: \"#{anchor}\" and chat history:\n#{chat_history_str}\nmarket context:\n#{market_context}\nrespond in one sentence max all lowercase with no punctuation"
+    ]
+    Enum.random(prompts)
   end
 
   defp format_chat_history(chat_messages) do
@@ -334,6 +344,15 @@ defmodule CoinTalk.Chat do
   end
 
   @doc """
+  Updates an existing chat message with the given attributes.
+  """
+  def update_message(%Message{} = message, attrs) do
+    message
+    |> Message.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Handles a user–submitted message. If the sender is not a bot,
   the last user message timestamp is updated.
   """
@@ -345,9 +364,11 @@ defmodule CoinTalk.Chat do
           CoinTalk.Chat.UserMessageTracker.set_last_message_timestamp(
             System.system_time(:millisecond)
           )
+
           # Trigger immediate bot responses
           GenServer.cast(CoinTalk.BotResponder, {:human_message, message})
         end
+
         {:ok, message}
 
       error ->
@@ -374,7 +395,7 @@ defmodule CoinTalk.MarketData do
 
   Maintains a record of the latest current price and historical data.
   Historical data includes: price 1 day ago, 1 week ago, 1 month ago, and 1 year ago.
-  
+
   If the historical endpoint is not supported, dummy fallback values are used:
     - Yesterday (2025-02-14): $97,499.63
     - 1 Week Ago (2025-02-08): $96,650.00
@@ -423,7 +444,26 @@ defmodule CoinTalk.MarketData do
     with {:ok, current_data} <- fetch_current_market_data(),
          {:ok, historical_data} <- fetch_all_historical_data() do
       timestamp = System.system_time(:millisecond)
-      new_state = %{state | current: current_data, historical: historical_data, last_updated: timestamp}
+
+      new_state = %{
+        state
+        | current: current_data,
+          historical: historical_data,
+          last_updated: timestamp
+      }
+
+      # Rapid movement alerts
+      if state.current && new_state.current do
+        old_price = state.current["quote"]["USD"]["price"]
+        new_price = new_state.current["quote"]["USD"]["price"]
+        change = (new_price - old_price) / old_price * 100.0
+
+        if abs(change) >= 1.0 do
+          alert_msg = "market alert: bitcoin price changed by #{Float.round(change, 2)}%!"
+          _ = CoinTalk.Chat.create_message(%{sender: "system", content: alert_msg})
+        end
+      end
+
       schedule_poll()
       {:noreply, new_state}
     else
@@ -451,6 +491,7 @@ defmodule CoinTalk.MarketData do
       end
 
     historical = state.historical || %{}
+
     context = """
     Current Price: $#{current_price}
     Historical Data:
@@ -459,6 +500,7 @@ defmodule CoinTalk.MarketData do
       1 Month Ago: $#{historical.month || "N/A"}
       1 Year Ago: $#{historical.year || "N/A"}
     """
+
     {:reply, context, state}
   end
 
@@ -473,6 +515,7 @@ defmodule CoinTalk.MarketData do
     api_key = Application.fetch_env!(:coin_talk, CoinTalk.MarketData)[:coinmarketcap_api_key]
     url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
     params = [symbol: "BTC", convert: "USD"]
+
     headers = [
       {"X-CMC_PRO_API_KEY", api_key},
       {"Accept", "application/json"}
@@ -503,9 +546,9 @@ defmodule CoinTalk.MarketData do
     }
 
     with {:ok, price_yesterday} <- fetch_historical_data_or_dummy(dates.yesterday, 97_499.63),
-         {:ok, price_week}    <- fetch_historical_data_or_dummy(dates.week, 96_650.00),
-         {:ok, price_month}   <- fetch_historical_data_or_dummy(dates.month, 100_700.00),
-         {:ok, price_year}    <- fetch_historical_data_or_dummy(dates.year, 51_800.00) do
+         {:ok, price_week} <- fetch_historical_data_or_dummy(dates.week, 96_650.00),
+         {:ok, price_month} <- fetch_historical_data_or_dummy(dates.month, 100_700.00),
+         {:ok, price_year} <- fetch_historical_data_or_dummy(dates.year, 51_800.00) do
       {:ok, %{yesterday: price_yesterday, week: price_week, month: price_month, year: price_year}}
     else
       _ ->
@@ -521,7 +564,10 @@ defmodule CoinTalk.MarketData do
         {:ok, price}
 
       {:error, reason} ->
-        IO.puts("Historical data error for #{Date.to_iso8601(date)}: #{inspect(reason)}. Using fallback value.")
+        IO.puts(
+          "Historical data error for #{Date.to_iso8601(date)}: #{inspect(reason)}. Using fallback value."
+        )
+
         {:ok, fallback}
     end
   end
@@ -532,6 +578,7 @@ defmodule CoinTalk.MarketData do
     api_key = Application.fetch_env!(:coin_talk, CoinTalk.MarketData)[:coinmarketcap_api_key]
     url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical"
     params = [symbol: "BTC", date: iso_date, convert: "USD"]
+
     headers = [
       {"X-CMC_PRO_API_KEY", api_key},
       {"Accept", "application/json"}
@@ -540,10 +587,12 @@ defmodule CoinTalk.MarketData do
     case Req.get(url, params: params, headers: headers) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         quotes = get_in(body, ["data", "BTC", "quotes"])
+
         case quotes do
           [first | _] ->
             price = first["quote"]["USD"]["price"] |> Float.round(2)
             {:ok, price}
+
           _ ->
             {:error, "No quotes found for #{iso_date}"}
         end
@@ -588,6 +637,7 @@ defmodule CoinTalkWeb.Api.ChartController do
   def index(conn, _params) do
     # Get the current market data.
     current = CoinTalk.MarketData.get_current_price()
+
     price =
       if current do
         current["quote"]["USD"]["price"] |> Float.round(2)
@@ -800,31 +850,33 @@ defmodule CoinTalkWeb.Plugs.RateLimiter do
 
   def init(opts), do: opts
 
-def call(conn, _opts) do
-  Logger.debug("RateLimiter plug: received #{conn.method} request with headers: #{inspect(conn.req_headers)}")
-  
-  if conn.method == "OPTIONS" do
-    conn
-  else
-    ensure_table_exists()
-    ip = ip_to_string(conn.remote_ip)
-    now = System.system_time(:millisecond)
-    Logger.debug("Checking rate for IP #{ip} at time #{now}")
+  def call(conn, _opts) do
+    Logger.debug(
+      "RateLimiter plug: received #{conn.method} request with headers: #{inspect(conn.req_headers)}"
+    )
 
-    case check_rate(ip, now) do
-      :ok ->
-        Logger.debug("Rate check OK for #{ip}")
-        conn
+    if conn.method == "OPTIONS" do
+      conn
+    else
+      ensure_table_exists()
+      ip = ip_to_string(conn.remote_ip)
+      now = System.system_time(:millisecond)
+      Logger.debug("Checking rate for IP #{ip} at time #{now}")
 
-      :error ->
-        Logger.debug("Rate limit exceeded for #{ip}")
-        conn
-        |> send_resp(429, "Rate limit exceeded")
-        |> halt()
+      case check_rate(ip, now) do
+        :ok ->
+          Logger.debug("Rate check OK for #{ip}")
+          conn
+
+        :error ->
+          Logger.debug("Rate limit exceeded for #{ip}")
+
+          conn
+          |> send_resp(429, "Rate limit exceeded")
+          |> halt()
+      end
     end
   end
-end
-
 
   defp ip_to_string(remote_ip) when is_tuple(remote_ip) do
     remote_ip
@@ -910,7 +962,6 @@ defmodule CoinTalkWeb.Router do
     get "/charts", ChartController, :index
     resources "/chat", ChatController, only: [:index, :create]
   end
-
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:coin_talk, :dev_routes) do
@@ -1146,6 +1197,8 @@ defmodule CoinTalk.GeminiClient do
   @api_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
   def generate_content(prompt) do
+    # Simulate network/API variability with a short random delay.
+    :timer.sleep(:rand.uniform(500))
     case System.get_env("GEMINI_API_KEY") do
       nil ->
         {:error, "Missing GEMINI_API_KEY environment variable"}
@@ -1277,3 +1330,16 @@ end
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
+# Wipe out all existing chat messages.
+IO.puts("Wiping existing chat messages...")
+CoinTalk.Repo.delete_all(CoinTalk.Chat.Message)
+
+# Insert an initial context prompt to kick off the conversation.
+IO.puts("Seeding initial chat prompt...")
+
+CoinTalk.Chat.create_message(%{
+  sender: "system",
+  content:
+    "welcome to coin talk! start chatting about bitcoin and usd now. use all lowercase and keep the response shorter than two sentences. be friendly!"
+})

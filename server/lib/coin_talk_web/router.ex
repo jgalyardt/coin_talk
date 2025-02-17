@@ -20,7 +20,6 @@ defmodule CoinTalkWeb.Router do
     pipe_through :browser
 
     get "/", DefaultController, :index
-
     # New route for viewing the bot conversation
     get "/botchat", BotChatController, :index
   end
@@ -34,6 +33,8 @@ defmodule CoinTalkWeb.Router do
 
     get "/charts", ChartController, :index
     resources "/chat", ChatController, only: [:index, :create]
+    # New route to clear chat and restart conversation.
+    delete "/chat/clear", ChatController, :clear
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
