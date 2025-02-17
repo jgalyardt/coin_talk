@@ -5,3 +5,9 @@ Users can chat too, and the bots will react based on the conversation.
 There need to be rate limits on everything to keep it completely free.
 Focus on the back-end API implementation.
 Give me the full output of any changed files.
+
+Modify my project's code to do the following:
+- Bot actions should be staggered by 1-3 seconds randomly
+- Before the bot makes a request to the Gemini API, send a response to the user that indicates this bot is doing so. This will be used to render a "B0b is typing..." message on the client.
+- Add a seeds function that wipes the chat database and sets a new context prompt to start the conversation
+- Think of one more feature of your own and add it

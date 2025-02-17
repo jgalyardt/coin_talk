@@ -17,31 +17,33 @@ defmodule CoinTalkWeb.Plugs.RateLimiter do
 
   def init(opts), do: opts
 
-def call(conn, _opts) do
-  Logger.debug("RateLimiter plug: received #{conn.method} request with headers: #{inspect(conn.req_headers)}")
-  
-  if conn.method == "OPTIONS" do
-    conn
-  else
-    ensure_table_exists()
-    ip = ip_to_string(conn.remote_ip)
-    now = System.system_time(:millisecond)
-    Logger.debug("Checking rate for IP #{ip} at time #{now}")
+  def call(conn, _opts) do
+    Logger.debug(
+      "RateLimiter plug: received #{conn.method} request with headers: #{inspect(conn.req_headers)}"
+    )
 
-    case check_rate(ip, now) do
-      :ok ->
-        Logger.debug("Rate check OK for #{ip}")
-        conn
+    if conn.method == "OPTIONS" do
+      conn
+    else
+      ensure_table_exists()
+      ip = ip_to_string(conn.remote_ip)
+      now = System.system_time(:millisecond)
+      Logger.debug("Checking rate for IP #{ip} at time #{now}")
 
-      :error ->
-        Logger.debug("Rate limit exceeded for #{ip}")
-        conn
-        |> send_resp(429, "Rate limit exceeded")
-        |> halt()
+      case check_rate(ip, now) do
+        :ok ->
+          Logger.debug("Rate check OK for #{ip}")
+          conn
+
+        :error ->
+          Logger.debug("Rate limit exceeded for #{ip}")
+
+          conn
+          |> send_resp(429, "Rate limit exceeded")
+          |> halt()
+      end
     end
   end
-end
-
 
   defp ip_to_string(remote_ip) when is_tuple(remote_ip) do
     remote_ip

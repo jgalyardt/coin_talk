@@ -7,6 +7,7 @@ defmodule CoinTalkWeb.Api.ChartController do
   def index(conn, _params) do
     # Get the current market data.
     current = CoinTalk.MarketData.get_current_price()
+
     price =
       if current do
         current["quote"]["USD"]["price"] |> Float.round(2)

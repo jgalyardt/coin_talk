@@ -36,7 +36,6 @@ defmodule CoinTalkWeb.Router do
     resources "/chat", ChatController, only: [:index, :create]
   end
 
-
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:coin_talk, :dev_routes) do
     import Phoenix.LiveDashboard.Router

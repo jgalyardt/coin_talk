@@ -5,7 +5,7 @@ defmodule CoinTalk.MarketData do
 
   Maintains a record of the latest current price and historical data.
   Historical data includes: price 1 day ago, 1 week ago, 1 month ago, and 1 year ago.
-  
+
   If the historical endpoint is not supported, dummy fallback values are used:
     - Yesterday (2025-02-14): $97,499.63
     - 1 Week Ago (2025-02-08): $96,650.00
@@ -54,7 +54,26 @@ defmodule CoinTalk.MarketData do
     with {:ok, current_data} <- fetch_current_market_data(),
          {:ok, historical_data} <- fetch_all_historical_data() do
       timestamp = System.system_time(:millisecond)
-      new_state = %{state | current: current_data, historical: historical_data, last_updated: timestamp}
+
+      new_state = %{
+        state
+        | current: current_data,
+          historical: historical_data,
+          last_updated: timestamp
+      }
+
+      # Rapid movement alerts
+      if state.current && new_state.current do
+        old_price = state.current["quote"]["USD"]["price"]
+        new_price = new_state.current["quote"]["USD"]["price"]
+        change = (new_price - old_price) / old_price * 100.0
+
+        if abs(change) >= 1.0 do
+          alert_msg = "market alert: bitcoin price changed by #{Float.round(change, 2)}%!"
+          _ = CoinTalk.Chat.create_message(%{sender: "system", content: alert_msg})
+        end
+      end
+
       schedule_poll()
       {:noreply, new_state}
     else
@@ -82,6 +101,7 @@ defmodule CoinTalk.MarketData do
       end
 
     historical = state.historical || %{}
+
     context = """
     Current Price: $#{current_price}
     Historical Data:
@@ -90,6 +110,7 @@ defmodule CoinTalk.MarketData do
       1 Month Ago: $#{historical.month || "N/A"}
       1 Year Ago: $#{historical.year || "N/A"}
     """
+
     {:reply, context, state}
   end
 
@@ -104,6 +125,7 @@ defmodule CoinTalk.MarketData do
     api_key = Application.fetch_env!(:coin_talk, CoinTalk.MarketData)[:coinmarketcap_api_key]
     url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
     params = [symbol: "BTC", convert: "USD"]
+
     headers = [
       {"X-CMC_PRO_API_KEY", api_key},
       {"Accept", "application/json"}
@@ -134,9 +156,9 @@ defmodule CoinTalk.MarketData do
     }
 
     with {:ok, price_yesterday} <- fetch_historical_data_or_dummy(dates.yesterday, 97_499.63),
-         {:ok, price_week}    <- fetch_historical_data_or_dummy(dates.week, 96_650.00),
-         {:ok, price_month}   <- fetch_historical_data_or_dummy(dates.month, 100_700.00),
-         {:ok, price_year}    <- fetch_historical_data_or_dummy(dates.year, 51_800.00) do
+         {:ok, price_week} <- fetch_historical_data_or_dummy(dates.week, 96_650.00),
+         {:ok, price_month} <- fetch_historical_data_or_dummy(dates.month, 100_700.00),
+         {:ok, price_year} <- fetch_historical_data_or_dummy(dates.year, 51_800.00) do
       {:ok, %{yesterday: price_yesterday, week: price_week, month: price_month, year: price_year}}
     else
       _ ->
@@ -152,7 +174,10 @@ defmodule CoinTalk.MarketData do
         {:ok, price}
 
       {:error, reason} ->
-        IO.puts("Historical data error for #{Date.to_iso8601(date)}: #{inspect(reason)}. Using fallback value.")
+        IO.puts(
+          "Historical data error for #{Date.to_iso8601(date)}: #{inspect(reason)}. Using fallback value."
+        )
+
         {:ok, fallback}
     end
   end
@@ -163,6 +188,7 @@ defmodule CoinTalk.MarketData do
     api_key = Application.fetch_env!(:coin_talk, CoinTalk.MarketData)[:coinmarketcap_api_key]
     url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical"
     params = [symbol: "BTC", date: iso_date, convert: "USD"]
+
     headers = [
       {"X-CMC_PRO_API_KEY", api_key},
       {"Accept", "application/json"}
@@ -171,10 +197,12 @@ defmodule CoinTalk.MarketData do
     case Req.get(url, params: params, headers: headers) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         quotes = get_in(body, ["data", "BTC", "quotes"])
+
         case quotes do
           [first | _] ->
             price = first["quote"]["USD"]["price"] |> Float.round(2)
             {:ok, price}
+
           _ ->
             {:error, "No quotes found for #{iso_date}"}
         end

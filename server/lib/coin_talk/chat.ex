@@ -35,6 +35,15 @@ defmodule CoinTalk.Chat do
   end
 
   @doc """
+  Updates an existing chat message with the given attributes.
+  """
+  def update_message(%Message{} = message, attrs) do
+    message
+    |> Message.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Handles a user–submitted message. If the sender is not a bot,
   the last user message timestamp is updated.
   """
@@ -46,9 +55,11 @@ defmodule CoinTalk.Chat do
           CoinTalk.Chat.UserMessageTracker.set_last_message_timestamp(
             System.system_time(:millisecond)
           )
+
           # Trigger immediate bot responses
           GenServer.cast(CoinTalk.BotResponder, {:human_message, message})
         end
+
         {:ok, message}
 
       error ->
