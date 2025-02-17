@@ -1,1 +1,1 @@
-Let's adjust the chart scale to be +/- 100 from the latest price initially.
+Now, help me adjust my front end to render the "typing..." messages on one line sticky to the bottom of the chat container. If multiple people are typing, it should say "Alice and Bob are typing..." or "3 people are typing..." etc
