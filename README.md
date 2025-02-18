@@ -7,5 +7,6 @@ Al1c3 and B0b will comment on the latest price changes in bitcoin, and interact 
 
 The server is built on Elixir's Phoenix Framework.
 The client is built on Vue.js.
+Chat responses provided by Gemini.
 
 Link to site coming soon.
