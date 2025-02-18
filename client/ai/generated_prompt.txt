@@ -1,4 +1,4 @@
-Now, help me adjust my front end to render the "typing..." messages on one line sticky to the bottom of the chat container. If multiple people are typing, it should say "Alice and Bob are typing..." or "3 people are typing..." etc
+Help me adjust the styles of the chat box to fit with the dark theme. I'd like the chat box and scrollbar to match.
 === File: src/App.vue ===
 
 <script setup>
@@ -11,10 +11,7 @@ import ChatBox from './components/ChatBox.vue'
     <div class="row">
       <!-- Left column (Chart) -->
       <div class="col-md-8 mb-3">
-        <div class="card">
-          <div class="card-header">
-            Market Chart
-          </div>
+        <div class="card bg-dark text-white">
           <div class="card-body">
             <MarketChart />
           </div>
@@ -31,7 +28,7 @@ import ChatBox from './components/ChatBox.vue'
 
 <style scoped>
 .card-body {
-  height: 400px;
+  height: 440px;
 }
 </style>
 
@@ -132,34 +129,38 @@ body {
   display: flex;
   justify-content: center;
 }
+
+body {
+  background-color: #121212 !important;
+}
 === File: src/components/ChatBox.vue ===
 
 <template>
-  <div class="card h-100 d-flex flex-column">
+  <div class="card h-100 d-flex flex-column bg-dark text-white">
+    <!-- Sticky 'typing...' indicator at the bottom -->
 
-    <!-- Chat messages -->
-    <div class="card-body overflow-auto" ref="messagesContainer" style="flex: 1">
-      <div
-        v-for="message in messages"
-        :key="message.id"
-        class="mb-3"
-      >
+    <div v-if="typingIndicator" class="typing-indicator position-absolute w-100">
+      <em>{{ typingIndicator }}</em>
+    </div>
+
+    <!-- Chat messages container -->
+    <div class="card-body overflow-auto position-relative" ref="messagesContainer"
+      style="flex: 1; padding-bottom: 2em;">
+      <!-- Render non-typing messages -->
+      <div v-for="message in nonTypingMessages" :key="message.id" class="mb-3">
         <div class="fw-bold">{{ message.sender }}:</div>
         <div>{{ message.content }}</div>
         <div class="text-muted small">{{ message.inserted_at }}</div>
       </div>
+
+
     </div>
 
     <!-- Chat input form -->
     <div class="card-footer">
       <form @submit.prevent="sendMessage" class="d-flex">
-        <input
-          v-model="newMessage.content"
-          type="text"
-          class="form-control me-2"
-          placeholder="Type your message..."
-          required
-        />
+        <input v-model="newMessage.content" type="text" class="form-control me-2" placeholder="Type your message..."
+          required />
         <button type="submit" class="btn btn-primary">
           Send
         </button>
@@ -169,7 +170,7 @@ body {
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 
 const messages = ref([])
 const newMessage = ref({ sender: 'User', content: '' })
@@ -213,17 +214,44 @@ async function sendMessage() {
 }
 
 onMounted(() => {
-  // initial load
+  // Initial load and polling for new messages.
   fetchChatMessages()
-  // poll for new messages every 5 seconds
   setInterval(fetchChatMessages, 5000)
+})
+
+// Computed property: filter out messages ending with "is typing..."
+const nonTypingMessages = computed(() => {
+  return messages.value.filter(m => !m.content.trim().endsWith("is typing..."))
+})
+
+// Computed property: get a unique list of senders with a "typing..." message
+const typingSenders = computed(() => {
+  const senders = messages.value
+    .filter(m => m.content.trim().endsWith("is typing..."))
+    .map(m => m.sender)
+  return [...new Set(senders)]
+})
+
+// Computed property: format the typing indicator text.
+const typingIndicator = computed(() => {
+  const senders = typingSenders.value
+  if (senders.length === 0) return ''
+  if (senders.length === 1) return `${senders[0]} is typing...`
+  if (senders.length === 2) return `${senders[0]} and ${senders[1]} are typing...`
+  return `${senders.length} people are typing...`
 })
 </script>
 
 <style scoped>
-  .card-body {
-    max-height: 388px;
-  }
+.typing-indicator {
+  bottom: 55px;
+  padding: 5px;
+  filter: opacity(0.5);
+}
+
+.card-body {
+  max-height: 388px;
+}
 </style>
 
 === File: src/components/icons/IconCommunity.vue ===
@@ -293,7 +321,11 @@ onMounted(() => {
 <template>
   <div class="market-chart h-100">
     <canvas ref="chartCanvas"></canvas>
-    <div class="historical-data mt-3" v-if="historicalData">
+  </div>
+</template>
+
+
+<!--     <div class="historical-data mt-3" v-if="historicalData">
       <h5>Historical Prices</h5>
       <ul>
         <li>Yesterday: ${{ historicalData.yesterday }}</li>
@@ -301,13 +333,13 @@ onMounted(() => {
         <li>1 Month Ago: ${{ historicalData.month }}</li>
         <li>1 Year Ago: ${{ historicalData.year }}</li>
       </ul>
-    </div>
-  </div>
-</template>
+    </div> -->
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import Chart from 'chart.js/auto'
+import annotationPlugin from 'chartjs-plugin-annotation';
+Chart.register(annotationPlugin);
 
 const chartCanvas = ref(null)
 let chartInstance = null
@@ -316,7 +348,7 @@ const historicalData = ref(null) // Reactive object for historical data
 
 // Function to add a random fluctuation of ±3
 function addFluctuation(price) {
-  const fluctuation = (Math.random() * 6 - 3).toFixed(2) // Random number between -3 and 3
+  const fluctuation = (Math.random() * 4 - 2).toFixed(2) // Random number between -2 and 2
   return parseFloat(price) + parseFloat(fluctuation)
 }
 
@@ -343,8 +375,8 @@ async function fetchMarketData() {
       chartInstance.data.datasets[0].data = newDataPoints
 
       // Adjust y-axis scale: set min/max to ±10 from the latest price
-      chartInstance.options.scales.y.min = price - 10
-      chartInstance.options.scales.y.max = price + 10
+      chartInstance.options.scales.y.min = price - 20
+      chartInstance.options.scales.y.max = price + 20
 
       chartInstance.update()
     }
@@ -371,11 +403,57 @@ onMounted(() => {
     },
     options: {
       scales: {
-        y: { beginAtZero: false } // min and max will be set after fetching data
+        x: {
+        display: false,
+        grid: {
+          drawTicks: false,
+          drawBorder: false
+        }
+      },
+        y: {
+          beginAtZero: false,
+          ticks: {
+            color: '#FFFFFF',
+            callback: function (value) {
+              return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+            }
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.2)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#FFFFFF'
+          }
+        },
+        annotation: {
+          annotations: {
+            priceLabel: {
+              type: 'label',
+              xValue: '100%', // Place it at the far right
+              yValue: () => dataPoints.value[dataPoints.value.length - 1], // Latest price
+              backgroundColor: 'rgba(0, 188, 212, 0.2)',
+              borderColor: 'rgba(255, 255, 255, 0)',
+              borderWidth: 1,
+              color: '#FFFFFF',
+              content: () => {
+                // Ensure data exists before formatting
+                if (dataPoints.value.length === 0) return 'Loading...';
+                return `$${dataPoints.value[dataPoints.value.length - 1].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              }, font: { size: 14 },
+              position: 'end',
+              padding: 6
+            }
+          }
+        }
       },
       responsive: true,
       maintainAspectRatio: false,
-    },
+    }
+
   })
 
   // Fetch data immediately, then poll every 5 seconds.

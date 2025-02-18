@@ -1,5 +1,5 @@
 <template>
-  <div class="card h-100 d-flex flex-column">
+  <div class="card h-100 d-flex flex-column bg-dark text-white">
     <!-- Sticky 'typing...' indicator at the bottom -->
 
     <div v-if="typingIndicator" class="typing-indicator position-absolute w-100">

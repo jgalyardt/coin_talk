@@ -1,7 +1,11 @@
 <template>
   <div class="market-chart h-100">
     <canvas ref="chartCanvas"></canvas>
-    <div class="historical-data mt-3" v-if="historicalData">
+  </div>
+</template>
+
+
+<!--     <div class="historical-data mt-3" v-if="historicalData">
       <h5>Historical Prices</h5>
       <ul>
         <li>Yesterday: ${{ historicalData.yesterday }}</li>
@@ -9,13 +13,13 @@
         <li>1 Month Ago: ${{ historicalData.month }}</li>
         <li>1 Year Ago: ${{ historicalData.year }}</li>
       </ul>
-    </div>
-  </div>
-</template>
+    </div> -->
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import Chart from 'chart.js/auto'
+import annotationPlugin from 'chartjs-plugin-annotation';
+Chart.register(annotationPlugin);
 
 const chartCanvas = ref(null)
 let chartInstance = null
@@ -24,7 +28,7 @@ const historicalData = ref(null) // Reactive object for historical data
 
 // Function to add a random fluctuation of ±3
 function addFluctuation(price) {
-  const fluctuation = (Math.random() * 6 - 3).toFixed(2) // Random number between -3 and 3
+  const fluctuation = (Math.random() * 4 - 2).toFixed(2) // Random number between -2 and 2
   return parseFloat(price) + parseFloat(fluctuation)
 }
 
@@ -51,8 +55,8 @@ async function fetchMarketData() {
       chartInstance.data.datasets[0].data = newDataPoints
 
       // Adjust y-axis scale: set min/max to ±10 from the latest price
-      chartInstance.options.scales.y.min = price - 10
-      chartInstance.options.scales.y.max = price + 10
+      chartInstance.options.scales.y.min = price - 20
+      chartInstance.options.scales.y.max = price + 20
 
       chartInstance.update()
     }
@@ -79,11 +83,57 @@ onMounted(() => {
     },
     options: {
       scales: {
-        y: { beginAtZero: false } // min and max will be set after fetching data
+        x: {
+        display: false,
+        grid: {
+          drawTicks: false,
+          drawBorder: false
+        }
+      },
+        y: {
+          beginAtZero: false,
+          ticks: {
+            color: '#FFFFFF',
+            callback: function (value) {
+              return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+            }
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.2)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#FFFFFF'
+          }
+        },
+        annotation: {
+          annotations: {
+            priceLabel: {
+              type: 'label',
+              xValue: '100%', // Place it at the far right
+              yValue: () => dataPoints.value[dataPoints.value.length - 1], // Latest price
+              backgroundColor: 'rgba(0, 188, 212, 0.2)',
+              borderColor: 'rgba(255, 255, 255, 0)',
+              borderWidth: 1,
+              color: '#FFFFFF',
+              content: () => {
+                // Ensure data exists before formatting
+                if (dataPoints.value.length === 0) return 'Loading...';
+                return `$${dataPoints.value[dataPoints.value.length - 1].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              }, font: { size: 14 },
+              position: 'end',
+              padding: 6
+            }
+          }
+        }
       },
       responsive: true,
       maintainAspectRatio: false,
-    },
+    }
+
   })
 
   // Fetch data immediately, then poll every 5 seconds.

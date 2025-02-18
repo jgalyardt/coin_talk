@@ -1,1 +1,1 @@
-Now, help me adjust my front end to render the "typing..." messages on one line sticky to the bottom of the chat container. If multiple people are typing, it should say "Alice and Bob are typing..." or "3 people are typing..." etc
+Help me adjust the styles of the chat box to fit with the dark theme. I'd like the chat box and scrollbar to match.

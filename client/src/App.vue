@@ -8,10 +8,7 @@ import ChatBox from './components/ChatBox.vue'
     <div class="row">
       <!-- Left column (Chart) -->
       <div class="col-md-8 mb-3">
-        <div class="card">
-          <div class="card-header">
-            Market Chart
-          </div>
+        <div class="card bg-dark text-white">
           <div class="card-body">
             <MarketChart />
           </div>
@@ -28,6 +25,6 @@ import ChatBox from './components/ChatBox.vue'
 
 <style scoped>
 .card-body {
-  height: 400px;
+  height: 440px;
 }
 </style>
